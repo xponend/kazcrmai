@@ -2,55 +2,79 @@
 
 Diploma project — open-source mobile-first CRM with AI agents (Satbayev University 2026).
 
+## Live demo
+
+- Backend: https://kazcrm.onrender.com (Render free, region: singapore, auto-deploys on push)
+- Health: https://kazcrm.onrender.com/api/health
+- Demo login: `admin@crm.kz` / `admin123` · `aizhan@crm.kz` / `pass123`
+- Mobile: Expo project `@sultandelux/kazcrmmobile`, EAS Update endpoint `https://u.expo.dev/db280bc1-ad39-4958-8ec1-cb8096a316da`, preview channel pinned to the live backend
+
 ## Structure
 
 | Folder | Stack | Role |
 |---|---|---|
-| `nextkazcrmai/` | Express 4 · MongoDB · Mongoose · Groq SDK (Llama 3.3 70B) | API + 3-agent AI pipeline (classify → prioritize → route) |
+| `nextkazcrmai/` | TypeScript · Express 4 · Mongoose 8 · Groq SDK 1.x (Llama 3.3 70B) | API + 3-agent AI pipeline (classify → prioritize → route) |
 | `kazcrmmobile/` | Expo SDK 55 · Expo Router 55 · React 19.2 · RN 0.83 · Zustand | Mobile client with EAS Update + Build configured |
 
-## Live infra
+Both apps use **yarn 1**.
 
-| Service | URL / ID |
-|---|---|
-| Backend (Render) | https://kazcrm.onrender.com (`srv-d7nof25ckfvc73f4va1g`, region: singapore, plan: free) |
-| Health probe | https://kazcrm.onrender.com/api/health |
-| EAS project | `@sultandelux/kazcrmmobile` (`db280bc1-ad39-4958-8ec1-cb8096a316da`) |
-| EAS Update endpoint | https://u.expo.dev/db280bc1-ad39-4958-8ec1-cb8096a316da |
+## How the deployed demo works
+
+`src/server.ts` resolves the Mongo URI in this order:
+
+1. `MONGODB_URI` env → use the real cluster
+2. otherwise → spin up `mongodb-memory-server` in-process and auto-seed if the `users` collection is empty (42 tickets, 15 KZ clients, 7 users)
+
+On Render free tier, the container sleeps after 15 min idle; the first request after sleep cold-starts mongod and reseeds — so the demo always starts in a known good state. To run with persistent storage, set `MONGODB_URI` to an Atlas/SRV string in Render's env and the fallback is skipped.
 
 ## Local quickstart
 
 ```sh
-# Backend (needs MONGODB_URI + GROQ_API_KEY in .env)
-cd nextkazcrmai && cp .env.example .env && npm install && npm run seed && npm run dev
+# Backend (works with or without a real MongoDB)
+cd nextkazcrmai && yarn install && yarn dev
 
 # Mobile (talks to local backend by default)
-cd kazcrmmobile && cp .env.example .env && npm install --legacy-peer-deps && npm start
+cd kazcrmmobile && cp .env.example .env && yarn install && yarn start
 ```
 
-## Production checklist
-
-The Render service is up but **DB-backed endpoints return 500 until `MONGODB_URI` is set**. Free option:
-
-1. Sign up at https://www.mongodb.com/cloud/atlas/register, create an M0 cluster.
-2. In Network Access, add `0.0.0.0/0` (or Render Singapore egress IPs).
-3. Get the connection string `mongodb+srv://USER:PASS@CLUSTER/kazcrmai?retryWrites=true&w=majority`.
-4. Set it on Render via API or dashboard, then trigger a redeploy:
-   ```sh
-   curl -X PATCH https://api.render.com/v1/services/srv-d7nof25ckfvc73f4va1g/env-vars \
-     -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
-     -d '[{"key":"MONGODB_URI","value":"mongodb+srv://..."},{"key":"JWT_SECRET","value":"..."},{"key":"GROQ_API_KEY","value":"..."},{"key":"NODE_VERSION","value":"20.19.4"}]'
-   ```
-5. Once the deploy is `live`, seed the database from your local machine pointing at the Atlas URI:
-   ```sh
-   MONGODB_URI="mongodb+srv://..." npm --prefix nextkazcrmai run seed
-   ```
-
-## EAS scripts
+## Backend scripts (`nextkazcrmai`)
 
 ```sh
-cd kazcrmmobile
-npm run update:preview -- --message "..."
-npm run build:preview      # internal-distribution build
-npm run build:production   # store-ready build
+yarn dev        # tsx watch src/server.ts
+yarn build      # tsc -> dist/
+yarn start      # node dist/server.js (Render runs this)
+yarn seed       # tsx src/seed.ts (requires MONGODB_URI)
+yarn typecheck  # tsc --noEmit
 ```
+
+## Mobile scripts (`kazcrmmobile`)
+
+```sh
+yarn start                # expo start
+yarn update:preview       # publish EAS update on preview channel
+yarn build:preview        # internal-distribution build
+yarn build:production     # store-ready build
+```
+
+## Env vars
+
+`nextkazcrmai/.env` (gitignored):
+
+```
+MONGODB_URI=          # leave blank for in-memory + auto-seed
+JWT_SECRET=...
+GROQ_API_KEY=gsk_...
+SEED_ON_BOOT=         # set to "true" to force auto-seed against any URI
+```
+
+`kazcrmmobile/.env`:
+
+```
+EXPO_PUBLIC_API_URL=https://kazcrm.onrender.com/api
+```
+
+## Verified
+
+- `yarn typecheck` passes on both apps
+- `npx expo-doctor` passes 18/18 on mobile
+- 46-check API exercise (auth, ticket list/detail/create/update with full Groq pipeline, clients with search, users/operators, analytics shape, status transition side-effects, 401/404/400 negatives) passes against the deployed Render backend
