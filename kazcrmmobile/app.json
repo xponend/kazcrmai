@@ -9,9 +9,6 @@
     "userInterfaceStyle": "automatic",
     "platforms": ["ios", "android"],
     "icon": "./assets/icon.png",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "kz.kazcrmai.mobile"
