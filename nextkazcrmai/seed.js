@@ -8,11 +8,11 @@ const TicketHistory = require("./models/TicketHistory");
 const users = [
   { name: "Админ Системы", email: "admin@crm.kz", password: "admin123", role: "admin", skills: ["all"] },
   { name: "Менеджер Алия", email: "aliya@crm.kz", password: "pass123", role: "manager", skills: ["billing", "complaint"] },
-  { name: "Айжан Серікова", email: "aizhan@crm.kz", password: "pass123", role: "operator", skills: ["technical_issue", "urgent_outage", "account_access"], currentLoad: 0 },
-  { name: "Бауыржан Қасымов", email: "baurzhan@crm.kz", password: "pass123", role: "operator", skills: ["billing", "general_inquiry", "feature_request"], currentLoad: 0 },
-  { name: "Дана Нұрланова", email: "dana@crm.kz", password: "pass123", role: "operator", skills: ["integration", "technical_issue", "feature_request"], currentLoad: 0 },
-  { name: "Ерлан Мұратов", email: "erlan@crm.kz", password: "pass123", role: "operator", skills: ["complaint", "general_inquiry", "billing"], currentLoad: 0 },
-  { name: "Гүлнар Ахметова", email: "gulnar@crm.kz", password: "pass123", role: "operator", skills: ["account_access", "technical_issue", "urgent_outage"], currentLoad: 0 },
+  { name: "Айжан Серікова", email: "aizhan@crm.kz", password: "pass123", role: "operator", skills: ["technical_issue", "urgent_outage", "account_access"] },
+  { name: "Бауыржан Қасымов", email: "baurzhan@crm.kz", password: "pass123", role: "operator", skills: ["billing", "general_inquiry", "feature_request"] },
+  { name: "Дана Нұрланова", email: "dana@crm.kz", password: "pass123", role: "operator", skills: ["integration", "technical_issue", "feature_request"] },
+  { name: "Ерлан Мұратов", email: "erlan@crm.kz", password: "pass123", role: "operator", skills: ["complaint", "general_inquiry", "billing"] },
+  { name: "Гүлнар Ахметова", email: "gulnar@crm.kz", password: "pass123", role: "operator", skills: ["account_access", "technical_issue", "urgent_outage"] },
 ];
 
 const clients = [
@@ -26,31 +26,98 @@ const clients = [
   { name: "ТОО «НурСтрой Групп»", email: "info@nurstroy.kz", phone: "+7 717 890 1234", company: "НурСтрой" },
   { name: "АО «Каспий Энерго»", email: "support@caspi-energy.kz", phone: "+7 712 901 2345", company: "Каспий Энерго" },
   { name: "ТОО «Digital Solutions KZ»", email: "hello@digsol.kz", phone: "+7 727 012 3456", company: "Digital Solutions" },
+  { name: "ТОО «АлатауАгро»", email: "info@alatau-agro.kz", phone: "+7 727 222 1133", company: "АлатауАгро" },
+  { name: "ИП Жакупов Е.С.", email: "zhakupov@gmail.com", phone: "+7 701 555 4422", company: "Жакупов ИП" },
+  { name: "АО «АстанаМедика»", email: "office@astana-med.kz", phone: "+7 717 333 8899", company: "АстанаМедика" },
+  { name: "ТОО «Казахмыс Ритейл»", email: "retail@kazakhmys.kz", phone: "+7 705 100 2030", company: "Казахмыс Ритейл" },
+  { name: "ОФ «Болашак»", email: "info@bolashak.kz", phone: "+7 717 700 5050", company: "Болашак" },
 ];
 
+// category, title, description, sentiment hint, urgency hint
 const tickets = [
-  { title: "Не могу войти в систему", description: "Добрый день! Уже третий день не могу войти в личный кабинет. Пароль точно правильный, но система выдаёт ошибку авторизации. Пробовал сбросить пароль — письмо не приходит. Работа стоит, прошу решить вопрос срочно.", clientIdx: 0 },
-  { title: "Срочно! Потеря данных после обновления", description: "После вчерашнего обновления системы пропала вся база клиентов за последние 3 месяца. Более 500 записей. Это критическая ситуация — у нас отчётный период, бухгалтерия требует данные до пятницы. Необходимо немедленное восстановление!", clientIdx: 1 },
-  { title: "Выставите счёт за март", description: "Здравствуйте, просим выставить счёт-фактуру за услуги марта 2026 года. Реквизиты организации прежние. Бухгалтерия просит до конца недели. Спасибо.", clientIdx: 2 },
-  { title: "Интеграция с 1С Бухгалтерией", description: "Добрый день! Нас интересует возможность интеграции вашей CRM с 1С:Бухгалтерия 8.3. Используем конфигурацию для Казахстана. Какие варианты подключения доступны? Есть ли готовый модуль обмена данными или нужна разработка?", clientIdx: 3 },
-  { title: "Жалоба на качество обслуживания", description: "Обращаюсь повторно! Прошлая заявка №4521 была создана 2 недели назад и до сих пор не решена. Менеджер Арман обещал перезвонить ещё в понедельник, но так и не перезвонил. Это неприемлемый уровень сервиса. Прошу руководство взять ситуацию под контроль.", clientIdx: 4 },
-  { title: "Запрос на добавление отчёта", description: "Было бы удобно иметь в системе возможность формировать отчёт по продажам в разрезе регионов Казахстана. Сейчас приходится выгружать всё в Excel и группировать вручную. Если есть техническая возможность — просим добавить.", clientIdx: 5 },
-  { title: "Ошибка при формировании отчёта", description: "При попытке сформировать отчёт за первый квартал система зависает на 80% и выдаёт ошибку 500. Пробовал в разных браузерах — Chrome, Firefox. Результат одинаковый. Отчёт нужен для совещания завтра утром.", clientIdx: 6 },
-  { title: "Вопрос о тарифных планах", description: "Добрый день! Мы сейчас на тарифе «Стандарт», но количество сотрудников выросло с 15 до 40 человек. Подскажите, какой тариф нам подойдёт? Есть ли скидки при оплате на год? Интересует также, есть ли отдельный тариф для НКО.", clientIdx: 7 },
-  { title: "Система работает очень медленно", description: "Последнюю неделю CRM работает невыносимо медленно. Каждая страница грузится по 15-20 секунд. У нас 30 сотрудников одновременно работают в системе. Интернет у нас 100 Мбит — проблема точно не на нашей стороне. Продуктивность упала в три раза.", clientIdx: 8 },
-  { title: "Подключение Telegram-бота", description: "Хотим подключить приём заявок через Telegram-бот. Клиенты пишут нам в Телеграм, и было бы удобно, чтобы сообщения автоматически создавались как заявки в CRM. Есть ли такая возможность или API для интеграции?", clientIdx: 9 },
-  { title: "Возврат переплаты", description: "В прошлом месяце произошла двойная оплата по счёту №INV-2026-0089. Сумма переплаты 145 000 тенге. Просим произвести возврат на расчётный счёт организации. Реквизиты прилагаю.", clientIdx: 0 },
-  { title: "Не приходят уведомления", description: "Перестали приходить email-уведомления о новых заявках. Раньше всё работало, после обновления в прошлую пятницу перестало. Push-уведомления тоже не приходят. Настройки не менял.", clientIdx: 3 },
-  { title: "Обучение новых сотрудников", description: "Приняли на работу 5 новых менеджеров. Нужно организовать обучение по работе с CRM. Можно ли провести онлайн-сессию на следующей неделе? Удобное время — вторник или среда после 14:00.", clientIdx: 5 },
-  { title: "Ошибка 403 при загрузке документов", description: "При попытке загрузить договор в формате PDF в карточку клиента получаю ошибку 403 Forbidden. Размер файла 2.4 МБ. Другие файлы (картинки) загружаются нормально. Возможно, проблема с разрешениями.", clientIdx: 8 },
-  { title: "Предложение по улучшению интерфейса", description: "Пользуемся CRM уже год. Было бы удобно добавить тёмную тему и возможность настраивать столбцы в таблице заявок. Также хотелось бы видеть дашборд с графиками прямо на главном экране, а не переходить в отдельный раздел.", clientIdx: 9 },
+  // urgent_outage
+  ["urgent_outage", "Срочно! Потеря данных после обновления", "После вчерашнего обновления системы пропала вся база клиентов за последние 3 месяца. Более 500 записей. Это критическая ситуация — у нас отчётный период.", "critical"],
+  ["urgent_outage", "Полный сбой системы с утра", "С 9:00 ни один сотрудник не может зайти в систему. Сервер вообще не отвечает. У нас останавливается работа колл-центра, теряем клиентов!", "critical"],
+  ["urgent_outage", "База данных недоступна", "Получаем ошибку 'database connection failed' уже 40 минут. Звоню на горячую линию — никто не берёт. Прошу срочно отреагировать.", "critical"],
+  ["urgent_outage", "Не работает API интеграции с банком", "Платежи через Halyk не проходят с 11:00. Все попытки возвращают 500. Терпим убытки, нужна срочная помощь!", "critical"],
+
+  // technical_issue
+  ["technical_issue", "Ошибка при формировании отчёта", "При попытке сформировать отчёт за первый квартал система зависает на 80% и выдаёт ошибку 500. Пробовал в разных браузерах.", "high"],
+  ["technical_issue", "Система работает очень медленно", "Последнюю неделю CRM работает невыносимо медленно. Каждая страница грузится по 15-20 секунд. У нас 30 сотрудников.", "high"],
+  ["technical_issue", "Ошибка 403 при загрузке документов", "При попытке загрузить договор в формате PDF в карточку клиента получаю ошибку 403 Forbidden. Размер файла 2.4 МБ.", "medium"],
+  ["technical_issue", "Не работает экспорт в Excel", "При экспорте таблицы заявок в xlsx файл скачивается, но не открывается — ошибка повреждения. CSV экспорт работает нормально.", "medium"],
+  ["technical_issue", "Поиск работает некорректно", "Поиск по клиентам не находит точные совпадения. Например, ввожу 'Сулейманов' — ничего не находит, хотя такой клиент есть.", "medium"],
+  ["technical_issue", "Календарь сбрасывает встречи", "Создаю встречу в календаре, через час она пропадает. Уже три встречи потерял за неделю. Это баг или настройка?", "high"],
+  ["technical_issue", "Виснет редактор сделок", "Когда добавляю больше 5 продуктов в сделку, редактор зависает на 30 секунд, потом выдаёт ошибку.", "medium"],
+
+  // account_access
+  ["account_access", "Не могу войти в систему", "Уже третий день не могу войти в личный кабинет. Пароль точно правильный, но система выдаёт ошибку авторизации.", "high"],
+  ["account_access", "Двухфакторная аутентификация не работает", "После включения 2FA SMS-коды не приходят на номер +7 701 234 5678. Сотовый оператор Beeline. Уже три дня.", "high"],
+  ["account_access", "Заблокирован аккаунт", "Вчера ввёл пароль 4 раза неправильно — система заблокировала аккаунт. Сброс пароля по email не работает.", "high"],
+  ["account_access", "Не приходит письмо для сброса пароля", "Уже 5 раз нажимал «Забыли пароль?», письмо не приходит. Проверял спам, корзину — пусто. Email указан верно.", "medium"],
+  ["account_access", "Сотрудник уволен — нужно отозвать доступ", "Уволили менеджера, но он всё ещё может заходить в CRM. Не могу найти где отозвать его учётку. Угроза безопасности данных.", "high"],
+
+  // billing
+  ["billing", "Выставите счёт за март", "Просим выставить счёт-фактуру за услуги марта 2026 года. Реквизиты организации прежние. Бухгалтерия просит до конца недели.", "low"],
+  ["billing", "Возврат переплаты", "В прошлом месяце произошла двойная оплата по счёту №INV-2026-0089. Сумма переплаты 145 000 тенге. Просим произвести возврат.", "medium"],
+  ["billing", "Вопрос о тарифных планах", "Сейчас на тарифе «Стандарт», но количество сотрудников выросло с 15 до 40 человек. Подскажите, какой тариф нам подойдёт?", "low"],
+  ["billing", "Не приходит акт сверки", "Запрашивали акт сверки за квартал 5 дней назад, до сих пор не получили. Бухгалтерия закрывает период.", "medium"],
+  ["billing", "Изменение реквизитов", "Сменился расчётный счёт. Просим обновить реквизиты в наших договорах: новый IBAN — KZ759470398... Высылаю карточку организации в приложении.", "low"],
+  ["billing", "Скидка для НКО", "Мы благотворительный фонд. Есть ли у вас специальные условия или скидки для некоммерческих организаций?", "low"],
+  ["billing", "Двойное списание с карты", "С корпоративной карты Visa списали 89 000 тенге дважды — 14 и 15 апреля. В обоих случаях указан одинаковый счёт.", "high"],
+
+  // feature_request
+  ["feature_request", "Запрос на добавление отчёта", "Было бы удобно формировать отчёт по продажам в разрезе регионов Казахстана. Сейчас приходится выгружать в Excel и группировать вручную.", "low"],
+  ["feature_request", "Предложение по улучшению интерфейса", "Было бы удобно добавить тёмную тему и возможность настраивать столбцы в таблице заявок. Также хотелось бы видеть дашборд на главном экране.", "low"],
+  ["feature_request", "Массовая рассылка email", "Хотим рассылать рекламные предложения по сегментам клиентов прямо из CRM, без выгрузки в стороннюю рассылку. Возможно?", "low"],
+  ["feature_request", "Воронка продаж в виде канбана", "Сейчас сделки списком — хотим видеть их канбан-доской с этапами. Это сильно ускорило бы работу менеджеров.", "low"],
+  ["feature_request", "API для мобильного приложения", "Разрабатываем своё мобильное приложение для торговых представителей. Нужен публичный REST API с документацией.", "medium"],
+
+  // complaint
+  ["complaint", "Жалоба на качество обслуживания", "Обращаюсь повторно! Прошлая заявка №4521 была создана 2 недели назад и до сих пор не решена. Менеджер обещал перезвонить — не перезвонил.", "high"],
+  ["complaint", "Грубое общение оператора поддержки", "Оператор Сергей Б. в чате отвечал односложно и в итоге написал «решите сами». Это неприемлемый сервис за такие деньги.", "high"],
+  ["complaint", "Несоблюдение SLA", "По договору первый ответ — 2 часа. По факту последние 3 заявки ответ был через 6, 8 и 11 часов. Где компенсация по SLA?", "high"],
+  ["complaint", "Обновление сломало настройки", "Без предупреждения откатили мои кастомные поля и отчёты. Восстанавливать вручную — это сотни часов работы. Кто компенсирует?", "high"],
+
+  // integration
+  ["integration", "Интеграция с 1С Бухгалтерией", "Интересует возможность интеграции вашей CRM с 1С:Бухгалтерия 8.3, конфигурация для Казахстана. Какие варианты подключения доступны?", "medium"],
+  ["integration", "Подключение Telegram-бота", "Хотим подключить приём заявок через Telegram-бот. Клиенты пишут нам в Телеграм, было бы удобно автоматически создавать заявки.", "medium"],
+  ["integration", "Webhook на смену статуса сделки", "Нам нужно получать webhook на нашу систему когда сделка переходит в статус «Выиграна». Это есть или надо разрабатывать?", "medium"],
+  ["integration", "Интеграция с Kaspi Pay", "Хотим принимать оплату по ссылке Kaspi прямо из карточки сделки. У вас есть такая интеграция или планируется?", "medium"],
+  ["integration", "Импорт контактов из Outlook", "Есть готовый коннектор для синхронизации контактов и встреч с Microsoft 365 / Outlook? Или это надо самим разрабатывать?", "low"],
+
+  // general_inquiry
+  ["general_inquiry", "Обучение новых сотрудников", "Приняли 5 новых менеджеров. Нужно организовать обучение по работе с CRM. Можно онлайн-сессию на следующей неделе?", "low"],
+  ["general_inquiry", "Где скачать мобильное приложение", "Коллеги говорят, у вас есть мобильное приложение, но в App Store найти не могу. Подскажите ссылку или название.", "low"],
+  ["general_inquiry", "Сертификация безопасности", "Готовим тендер для госсектора, требуется ваш сертификат соответствия СТ РК ИСО/МЭК 27001. Можете прислать копию?", "low"],
+  ["general_inquiry", "Часовой пояс отчётов", "В каком часовом поясе формируются отчёты — по серверу или по настройкам пользователя? У нас офисы в Алматы и Астане.", "low"],
+  ["general_inquiry", "Не приходят уведомления", "Перестали приходить email-уведомления о новых заявках. Раньше работало, после обновления в прошлую пятницу перестало.", "medium"],
 ];
+
+const REASONING = {
+  urgent_outage: "Обнаружены ключевые слова срочности и потери работоспособности — наивысший приоритет.",
+  technical_issue: "Описание содержит конкретную техническую ошибку, влияющую на работу пользователя.",
+  account_access: "Заявка касается доступа к учётной записи, требует проверки безопасности.",
+  billing: "Финансовый запрос, направлен в группу биллинга.",
+  feature_request: "Предложение по развитию продукта, не требует немедленной реакции.",
+  complaint: "Негативная тональность и упоминания SLA — требует внимания менеджера.",
+  integration: "Запрос на интеграцию с внешней системой, требует технической экспертизы.",
+  general_inquiry: "Общий вопрос, может быть обработан стандартной процедурой.",
+};
+
+const PRIORITY_SCORE = { critical: 88, high: 67, medium: 42, low: 18 };
+const STATUS_BY_AGE = ["new", "in_progress", "in_progress", "resolved", "resolved", "closed"];
+
+function pickOperator(operators, category) {
+  const matches = operators.filter((op) => op.skills.includes(category));
+  const pool = matches.length > 0 ? matches : operators;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
 async function seed() {
   await mongoose.connect(process.env.MONGODB_URI);
   console.log("Connected to MongoDB");
 
-  // Clear existing data
   await Promise.all([
     User.deleteMany({}),
     Client.deleteMany({}),
@@ -59,63 +126,86 @@ async function seed() {
   ]);
   console.log("Cleared existing data");
 
-  // Create users
   const createdUsers = await User.create(users);
-  console.log(`Created ${createdUsers.length} users`);
-
-  // Create clients
   const createdClients = await Client.create(clients);
-  console.log(`Created ${createdClients.length} clients`);
-
-  // Create tickets (without AI — those get processed live during demo)
   const admin = createdUsers[0];
   const operators = createdUsers.filter((u) => u.role === "operator");
 
-  for (const t of tickets) {
-    const operator = operators[Math.floor(Math.random() * operators.length)];
-    const statuses = ["new", "in_progress", "resolved", "closed"];
-    const priorities = ["low", "medium", "high", "critical"];
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    const priority = priorities[Math.floor(Math.random() * priorities.length)];
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  let createdCount = 0;
+
+  for (let i = 0; i < tickets.length; i++) {
+    const [category, title, description, sentiment] = tickets[i];
+    const client = createdClients[i % createdClients.length];
+
+    // Spread tickets across the last 7 days
+    const ageDays = (i % 7) + Math.random();
+    const createdAt = new Date(now - ageDays * day - Math.random() * day);
+    const status = STATUS_BY_AGE[Math.min(STATUS_BY_AGE.length - 1, Math.floor(ageDays))];
+
+    const operator = pickOperator(operators, category);
+    const score = PRIORITY_SCORE[sentiment] + Math.floor(Math.random() * 8 - 4);
+    const priority = score >= 76 ? "critical" : score >= 51 ? "high" : score >= 26 ? "medium" : "low";
+
+    const firstResponseAt = status !== "new" ? new Date(createdAt.getTime() + (15 + Math.random() * 90) * 60 * 1000) : undefined;
+    const resolvedAt = ["resolved", "closed"].includes(status)
+      ? new Date(createdAt.getTime() + (60 + Math.random() * 480) * 60 * 1000)
+      : undefined;
 
     const ticket = await Ticket.create({
-      title: t.title,
-      description: t.description,
-      clientId: createdClients[t.clientIdx]._id,
+      title,
+      description,
+      clientId: client._id,
       createdBy: admin._id,
       assigneeId: operator._id,
       status,
       priority,
-      createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // random within last week
-      ...(status === "resolved" ? { resolvedAt: new Date(), firstResponseAt: new Date(Date.now() - Math.random() * 60 * 60 * 1000) } : {}),
-      ...(status === "in_progress" ? { firstResponseAt: new Date(Date.now() - Math.random() * 2 * 60 * 60 * 1000) } : {}),
+      category,
+      aiCategory: category,
+      aiConfidence: 0.85 + Math.random() * 0.13,
+      aiScore: score,
+      aiReason: `Категория: ${REASONING[category]} | Приоритет: ${priority}/${score} | Назначен: ${operator.name}.`,
+      aiProcessedAt: new Date(createdAt.getTime() + 1500),
+      createdAt,
+      firstResponseAt,
+      resolvedAt,
     });
 
-    await TicketHistory.create({
-      ticketId: ticket._id,
-      action: "created",
-      newValue: "new",
-      performedBy: admin._id,
-    });
+    await TicketHistory.insertMany(
+      [
+        { ticketId: ticket._id, action: "created", newValue: "new", performedBy: admin._id, comment: `Заявка создана: ${title}`, createdAt },
+        {
+          ticketId: ticket._id,
+          action: "ai_processed",
+          newValue: JSON.stringify({ category, priority, score, assignee: operator.name }),
+          comment: `ИИ-анализ завершён за ${1200 + Math.floor(Math.random() * 800)}мс. Категория: ${category} (${Math.round((0.85 + Math.random() * 0.13) * 100)}%). Приоритет: ${priority} (${score}/100). Назначен: ${operator.name}.`,
+          createdAt: new Date(createdAt.getTime() + 1500),
+        },
+        firstResponseAt
+          ? { ticketId: ticket._id, action: "status_changed", oldValue: "new", newValue: "in_progress", performedBy: operator._id, createdAt: firstResponseAt }
+          : null,
+        resolvedAt
+          ? { ticketId: ticket._id, action: "status_changed", oldValue: "in_progress", newValue: "resolved", performedBy: operator._id, createdAt: resolvedAt }
+          : null,
+      ].filter(Boolean)
+    );
 
-    if (status !== "new") {
-      operator.currentLoad += 1;
-    }
+    createdCount++;
   }
 
-  // Update operator loads
+  // Recompute operator load and client stats
   for (const op of operators) {
     const load = await Ticket.countDocuments({ assigneeId: op._id, status: { $in: ["new", "in_progress"] } });
     await User.findByIdAndUpdate(op._id, { currentLoad: load });
   }
-
-  // Update client ticket counts
   for (const c of createdClients) {
     const count = await Ticket.countDocuments({ clientId: c._id });
-    await Client.findByIdAndUpdate(c._id, { totalTickets: count, avgSatisfaction: 3 + Math.random() * 2 });
+    const satisfaction = 3 + Math.random() * 2;
+    await Client.findByIdAndUpdate(c._id, { totalTickets: count, avgSatisfaction: Math.round(satisfaction * 10) / 10 });
   }
 
-  console.log(`Created ${tickets.length} tickets with history`);
+  console.log(`Created ${createdUsers.length} users, ${createdClients.length} clients, ${createdCount} tickets`);
   console.log("\n--- Login credentials ---");
   console.log("Admin:    admin@crm.kz / admin123");
   console.log("Manager:  aliya@crm.kz / pass123");
@@ -126,4 +216,7 @@ async function seed() {
   console.log("\nDone! Run: npm run dev");
 }
 
-seed().catch(console.error);
+seed().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
