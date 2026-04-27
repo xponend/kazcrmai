@@ -19,6 +19,8 @@ export interface TicketAttrs {
   createdBy?: Types.ObjectId;
   resolvedAt?: Date;
   firstResponseAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export type TicketDoc = HydratedDocument<TicketAttrs>;
