@@ -11,33 +11,38 @@ const analyticsRoutes = require("./routes/analytics");
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(morgan("dev"));
+app.use(morgan("tiny"));
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/clients", clientRouter);
 app.use("/api/users", userRouter);
 app.use("/api/analytics", analyticsRoutes);
 
-// Health check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+  res.json({
+    status: "ok",
+    db: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    groq: process.env.GROQ_API_KEY ? "configured" : "missing",
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// Connect and start
+app.get("/", (req, res) => {
+  res.json({ name: "nextkazcrmai", health: "/api/health" });
+});
+
 const PORT = process.env.PORT || 3000;
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-    process.exit(1);
-  });
+app.listen(PORT, () => console.log(`HTTP listening on ${PORT}`));
+
+if (!process.env.MONGODB_URI) {
+  console.warn("MONGODB_URI is not set — DB-backed routes will return 500 until configured.");
+} else {
+  mongoose
+    .connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 8000 })
+    .then(() => console.log("MongoDB connected"))
+    .catch((err) => console.error("MongoDB connection error:", err.message));
+}
