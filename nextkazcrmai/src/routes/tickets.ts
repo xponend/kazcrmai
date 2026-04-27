@@ -196,14 +196,26 @@ const update: RequestHandler = async (req, res) => {
         fail(res, 400, "Получатель должен быть активным оператором");
         return;
       }
-      if (ticket.assigneeId) {
-        await User.findByIdAndUpdate(ticket.assigneeId, { $inc: { currentLoad: -1 } });
+      const previousAssigneeId = ticket.assigneeId ?? null;
+      // Conditional update: only succeeds if assignee hasn't changed since we read it.
+      // Prevents the load counter from drifting under concurrent reassignments.
+      const claimed = await Ticket.findOneAndUpdate(
+        { _id: ticket._id, assigneeId: previousAssigneeId },
+        { $set: { assigneeId } },
+        { new: false }
+      );
+      if (!claimed) {
+        fail(res, 409, "Заявка была переназначена другим пользователем", "STALE_ASSIGNEE");
+        return;
+      }
+      if (previousAssigneeId) {
+        await User.findByIdAndUpdate(previousAssigneeId, { $inc: { currentLoad: -1 } });
       }
       await User.findByIdAndUpdate(assigneeId, { $inc: { currentLoad: 1 } });
       await TicketHistory.create({
         ticketId: ticket._id,
         action: "assigned",
-        oldValue: ticket.assigneeId ? String(ticket.assigneeId) : undefined,
+        oldValue: previousAssigneeId ? String(previousAssigneeId) : undefined,
         newValue: assigneeId,
         performedBy: user._id,
       });
