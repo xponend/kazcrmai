@@ -4,6 +4,7 @@ import { TicketHistory } from "../models/TicketHistory";
 import { User } from "../models/User";
 import { auth } from "../middleware/auth";
 import { processNewTicket } from "../lib/ai/orchestrator";
+import { suggestReplies, summarizeTicket } from "../lib/ai/assist";
 import { clampInt, isObjectId, isNonEmptyString } from "../lib/validate";
 
 const router = Router();
@@ -249,10 +250,121 @@ const update: RequestHandler = async (req, res) => {
   }
 };
 
+/**
+ * Authorise read-or-write access on a single ticket. Operators may only
+ * touch tickets assigned to them or that they created. Admin/manager — any.
+ */
+async function loadTicketWithAuth(req: Parameters<RequestHandler>[0], res: Parameters<RequestHandler>[1]) {
+  if (!isObjectId(req.params.id)) {
+    fail(res, 400, "Некорректный id заявки");
+    return null;
+  }
+  const ticket = await Ticket.findById(req.params.id);
+  if (!ticket) {
+    fail(res, 404, "Заявка не найдена");
+    return null;
+  }
+  const user = req.user!;
+  if (user.role === "operator") {
+    const isAssignee = ticket.assigneeId && String(ticket.assigneeId) === String(user._id);
+    const isCreator = ticket.createdBy && String(ticket.createdBy) === String(user._id);
+    if (!isAssignee && !isCreator) {
+      fail(res, 403, "Недостаточно прав", "FORBIDDEN");
+      return null;
+    }
+  }
+  return ticket;
+}
+
+const aiSuggestReply: RequestHandler = async (req, res) => {
+  try {
+    const ticket = await loadTicketWithAuth(req, res);
+    if (!ticket) return;
+    const suggestions = await suggestReplies(
+      ticket.title,
+      ticket.description,
+      ticket.aiCategory ?? ticket.category
+    );
+    if (suggestions.length === 0) {
+      fail(res, 502, "Не удалось получить варианты ответа", "AI_EMPTY");
+      return;
+    }
+    res.json({ suggestions });
+  } catch (err) {
+    console.error("tickets.aiSuggestReply error:", (err as Error).message);
+    fail(res, 502, "Сервис ИИ временно недоступен", "AI_FAILED");
+  }
+};
+
+const aiSummarize: RequestHandler = async (req, res) => {
+  try {
+    const ticket = await loadTicketWithAuth(req, res);
+    if (!ticket) return;
+    const result = await summarizeTicket(ticket.title, ticket.description);
+    if (!result.summary) {
+      fail(res, 502, "Не удалось сформировать саммари", "AI_EMPTY");
+      return;
+    }
+    res.json(result);
+  } catch (err) {
+    console.error("tickets.aiSummarize error:", (err as Error).message);
+    fail(res, 502, "Сервис ИИ временно недоступен", "AI_FAILED");
+  }
+};
+
+const aiSimilar: RequestHandler = async (req, res) => {
+  try {
+    const ticket = await loadTicketWithAuth(req, res);
+    if (!ticket) return;
+    const limit = clampInt(req.query.limit, 5, 1, 20);
+
+    // Mongo $text + scoring; falls back to category-only if text index unused.
+    const query = `${ticket.title} ${ticket.description}`.slice(0, 500);
+    const filter: Record<string, unknown> = {
+      _id: { $ne: ticket._id },
+      $text: { $search: query },
+    };
+    if (ticket.aiCategory) filter.aiCategory = ticket.aiCategory;
+    if (ticket.status === "resolved" || ticket.status === "closed") {
+      // ok — looking for similar tickets regardless of state
+    } else {
+      filter.status = { $in: ["resolved", "closed"] };
+    }
+
+    let similar = await Ticket.find(filter, { score: { $meta: "textScore" } })
+      .sort({ score: { $meta: "textScore" } })
+      .limit(limit)
+      .populate("clientId", "name company")
+      .populate("assigneeId", "name");
+
+    // Fallback: same category, most recent.
+    if (similar.length === 0 && ticket.aiCategory) {
+      similar = await Ticket.find({
+        _id: { $ne: ticket._id },
+        aiCategory: ticket.aiCategory,
+        status: { $in: ["resolved", "closed"] },
+      })
+        .sort({ resolvedAt: -1, createdAt: -1 })
+        .limit(limit)
+        .populate("clientId", "name company")
+        .populate("assigneeId", "name");
+    }
+
+    res.json({ similar });
+  } catch (err) {
+    console.error("tickets.aiSimilar error:", (err as Error).message);
+    fail(res, 500, "Не удалось найти похожие заявки");
+  }
+};
+
 router.get("/", auth, list);
 router.get("/:id", auth, get);
 router.post("/", auth, create);
 router.put("/:id", auth, update);
 router.patch("/:id", auth, update);
+
+router.post("/:id/ai/suggest-reply", auth, aiSuggestReply);
+router.post("/:id/ai/summarize", auth, aiSummarize);
+router.get("/:id/ai/similar", auth, aiSimilar);
 
 export default router;

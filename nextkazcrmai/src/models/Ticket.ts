@@ -49,5 +49,6 @@ const ticketSchema = new Schema<TicketAttrs>(
 ticketSchema.index({ status: 1, priority: 1 });
 ticketSchema.index({ assigneeId: 1, status: 1 });
 ticketSchema.index({ clientId: 1 });
+ticketSchema.index({ title: "text", description: "text" }, { weights: { title: 5, description: 1 } });
 
 export const Ticket = mongoose.model<TicketAttrs>("Ticket", ticketSchema);
