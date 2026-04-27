@@ -1,7 +1,7 @@
 import { Router, type RequestHandler } from "express";
 import { Ticket } from "../models/Ticket";
 import { User } from "../models/User";
-import { auth } from "../middleware/auth";
+import { auth, requireRole } from "../middleware/auth";
 
 const router = Router();
 
@@ -60,10 +60,11 @@ const summary: RequestHandler = async (_req, res) => {
       ticketsPerDay,
     });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    console.error("analytics.summary error:", (err as Error).message);
+    res.status(500).json({ error: "Не удалось получить аналитику" });
   }
 };
 
-router.get("/", auth, summary);
+router.get("/", auth, requireRole("admin", "manager"), summary);
 
 export default router;

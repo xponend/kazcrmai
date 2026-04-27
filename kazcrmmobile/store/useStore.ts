@@ -1,6 +1,11 @@
 import { create } from "zustand";
-import * as SecureStore from "expo-secure-store";
-import { login as apiLogin, getMe } from "../api/client";
+import {
+  login as apiLogin,
+  getMe,
+  logoutApi,
+  tokenStore,
+  setForceLogoutHandler,
+} from "../api/client";
 
 type User = {
   id: string;
@@ -11,41 +16,54 @@ type User = {
 
 type Store = {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
 };
 
-export const useStore = create<Store>((set) => ({
-  user: null,
-  token: null,
-  isLoading: true,
+export const useStore = create<Store>((set) => {
+  // Wire force-logout from the axios interceptor into the store.
+  setForceLogoutHandler(() => {
+    set({ user: null });
+  });
 
-  login: async (email, password) => {
-    const { data } = await apiLogin(email, password);
-    await SecureStore.setItemAsync("token", data.token);
-    set({ user: data.user, token: data.token });
-  },
+  return {
+    user: null,
+    isLoading: true,
 
-  logout: async () => {
-    await SecureStore.deleteItemAsync("token");
-    set({ user: null, token: null });
-  },
+    login: async (email, password) => {
+      const { data } = await apiLogin(email, password);
+      await tokenStore.setTokens(data.accessToken, data.refreshToken);
+      set({ user: data.user });
+    },
 
-  restoreSession: async () => {
-    try {
-      const token = await SecureStore.getItemAsync("token");
-      if (token) {
-        const { data } = await getMe();
-        set({ user: data.user, token, isLoading: false });
-      } else {
-        set({ isLoading: false });
+    logout: async () => {
+      const refreshToken = await tokenStore.getRefresh();
+      try {
+        await logoutApi(refreshToken);
+      } catch {
+        // Server-side revocation best-effort; always clear locally.
       }
-    } catch {
-      await SecureStore.deleteItemAsync("token");
-      set({ user: null, token: null, isLoading: false });
-    }
-  },
-}));
+      await tokenStore.clear();
+      set({ user: null });
+    },
+
+    restoreSession: async () => {
+      try {
+        const access = await tokenStore.getAccess();
+        if (!access) {
+          set({ isLoading: false });
+          return;
+        }
+        const { data } = await getMe();
+        set({ user: data.user, isLoading: false });
+      } catch {
+        // getMe will trigger refresh-then-401-clear via interceptor; if we land
+        // here, both paths failed.
+        await tokenStore.clear();
+        set({ user: null, isLoading: false });
+      }
+    },
+  };
+});

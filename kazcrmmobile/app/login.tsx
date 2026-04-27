@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useStore } from "../store/useStore";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("aizhan@crm.kz");
-  const [password, setPassword] = useState("pass123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useStore();
 
@@ -45,7 +45,6 @@ export default function LoginScreen() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.hint}>Тестовый вход: aizhan@crm.kz / pass123</Text>
     </KeyboardAvoidingView>
   );
 }

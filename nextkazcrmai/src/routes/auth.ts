@@ -1,7 +1,7 @@
 import { Router, type RequestHandler } from "express";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import crypto from "crypto";
-import { User, type RefreshTokenEntry, type UserDoc } from "../models/User";
+import { User, type UserDoc } from "../models/User";
 import { auth } from "../middleware/auth";
 import { env } from "../config/env";
 import { loginLimiter } from "../middleware/rateLimit";
