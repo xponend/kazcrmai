@@ -23,7 +23,7 @@ export default function TicketDetailScreen() {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const { data } = await getTicket(id);
       setTicket(data.ticket);
@@ -33,9 +33,9 @@ export default function TicketDetailScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => { load(); }, [load]);
 
   const changeStatus = async () => {
     const next = NEXT_STATUS[ticket.status];

@@ -9,16 +9,16 @@ export default function ClientsScreen() {
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const { data } = await getClients(search || undefined);
       setClients(data.clients);
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [search]);
 
-  useFocusEffect(useCallback(() => { load(); }, [search]));
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
     <View style={styles.container}>

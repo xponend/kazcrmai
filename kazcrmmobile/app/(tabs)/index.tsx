@@ -18,7 +18,7 @@ export default function TicketsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const params: Record<string, string> = {};
       if (filter !== "all") params.status = filter;
@@ -27,9 +27,9 @@ export default function TicketsScreen() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [filter]);
 
-  useFocusEffect(useCallback(() => { load(); }, [filter]));
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const onRefresh = async () => {
     setRefreshing(true);
