@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
