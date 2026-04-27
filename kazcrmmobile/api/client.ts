@@ -184,4 +184,43 @@ export const aiSummarizeTicket = (ticketId: string) =>
 export const aiSimilarTickets = (ticketId: string, limit = 5) =>
   api.get(`/tickets/${ticketId}/ai/similar`, { params: { limit } });
 
+export type AiPreviewResult = {
+  classification: { category: string; confidence: number; reasoning: string };
+  priority: { score: number; priority: string; sentiment: string; reasoning: string };
+};
+
+export const aiPreviewTicket = (data: { title: string; description: string }) =>
+  api.post<AiPreviewResult>("/tickets/preview", data);
+
+export type DigestResponse = {
+  totalTickets: number;
+  newTickets: number;
+  resolvedTickets: number;
+  byCategory: Record<string, number>;
+  byPriority: Record<string, number>;
+  topClients: Array<{ name: string; count: number }>;
+  avgResolutionMins: number;
+  windowHours: number;
+  headline: string;
+  insights: string[];
+  recommendations: string[];
+  aiAvailable: boolean;
+};
+
+export const aiDigest = (hours = 24) =>
+  api.get<DigestResponse>("/insights/digest", { params: { hours } });
+
+export type ClientProfileResult = {
+  profile: {
+    persona: string;
+    toneAdvice: string;
+    riskFlags: string[];
+    recurringTopics: string[];
+  };
+  sampleSize: number;
+};
+
+export const aiClientProfile = (clientId: string) =>
+  api.post<ClientProfileResult>(`/clients/${clientId}/ai/profile`);
+
 export default api;

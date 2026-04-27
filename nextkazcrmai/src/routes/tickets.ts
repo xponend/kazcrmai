@@ -5,6 +5,8 @@ import { User } from "../models/User";
 import { auth } from "../middleware/auth";
 import { processNewTicket } from "../lib/ai/orchestrator";
 import { suggestReplies, summarizeTicket } from "../lib/ai/assist";
+import { classifyTicket } from "../lib/ai/classify";
+import { prioritizeTicket } from "../lib/ai/prioritize";
 import { clampInt, isObjectId, isNonEmptyString } from "../lib/validate";
 
 const router = Router();
@@ -363,8 +365,30 @@ router.post("/", auth, create);
 router.put("/:id", auth, update);
 router.patch("/:id", auth, update);
 
+const aiPreview: RequestHandler = async (req, res) => {
+  try {
+    const { title, description } = req.body as { title?: string; description?: string };
+    if (!isNonEmptyString(title, 200) || !isNonEmptyString(description, 10_000)) {
+      fail(res, 400, "Заголовок и описание обязательны");
+      return;
+    }
+    const classification = await classifyTicket(title.trim(), description.trim());
+    const priority = await prioritizeTicket(
+      title.trim(),
+      description.trim(),
+      classification.category,
+      { totalTickets: 0, avgSatisfaction: 3 }
+    );
+    res.json({ classification, priority });
+  } catch (err) {
+    console.error("tickets.aiPreview error:", (err as Error).message);
+    fail(res, 502, "Сервис ИИ временно недоступен", "AI_FAILED");
+  }
+};
+
 router.post("/:id/ai/suggest-reply", auth, aiSuggestReply);
 router.post("/:id/ai/summarize", auth, aiSummarize);
 router.get("/:id/ai/similar", auth, aiSimilar);
+router.post("/preview", auth, aiPreview);
 
 export default router;

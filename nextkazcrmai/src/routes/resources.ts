@@ -1,7 +1,9 @@
 import { Router, type RequestHandler } from "express";
 import { Client } from "../models/Client";
 import { User } from "../models/User";
+import { Ticket } from "../models/Ticket";
 import { auth, requireRole } from "../middleware/auth";
+import { generateClientProfile } from "../lib/ai/insights";
 import { clampInt, escapeRegex, isObjectId, isNonEmptyString } from "../lib/validate";
 
 export const clientRouter = Router();
@@ -81,9 +83,46 @@ const createClient: RequestHandler = async (req, res) => {
   }
 };
 
+const aiProfile: RequestHandler = async (req, res) => {
+  try {
+    if (!isObjectId(req.params.id)) {
+      res.status(400).json({ error: "Некорректный id клиента" });
+      return;
+    }
+    const client = await Client.findById(req.params.id);
+    if (!client) {
+      res.status(404).json({ error: "Клиент не найден" });
+      return;
+    }
+    const recent = await Ticket.find({ clientId: client._id })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .select("title aiCategory category priority status createdAt");
+
+    const profile = await generateClientProfile({
+      name: client.name,
+      company: client.company,
+      totalTickets: client.totalTickets ?? 0,
+      avgSatisfaction: client.avgSatisfaction ?? 3,
+      recentTickets: recent.map((t) => ({
+        title: t.title,
+        category: t.aiCategory ?? t.category,
+        priority: t.priority,
+        status: t.status,
+        createdAt: t.createdAt,
+      })),
+    });
+    res.json({ profile, sampleSize: recent.length });
+  } catch (err) {
+    console.error("clients.aiProfile error:", (err as Error).message);
+    res.status(502).json({ error: "Сервис ИИ временно недоступен", code: "AI_FAILED" });
+  }
+};
+
 clientRouter.get("/", auth, listClients);
 clientRouter.get("/:id", auth, getClient);
 clientRouter.post("/", auth, requireRole("admin", "manager"), createClient);
+clientRouter.post("/:id/ai/profile", auth, requireRole("admin", "manager"), aiProfile);
 
 const listUsers: RequestHandler = async (_req, res) => {
   try {
