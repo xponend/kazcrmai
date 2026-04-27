@@ -1,6 +1,6 @@
 import type { TicketPriority } from "../../models/Ticket";
 import type { Category } from "./classify";
-import { getGroq, GROQ_MODEL } from "./groqClient";
+import { getGroq, GROQ_MODEL, withGroqTimeout, safeJsonParse } from "./groqClient";
 
 export interface ClientHistory {
   totalTickets: number;
@@ -47,19 +47,21 @@ export async function prioritizeTicket(
 Ответ строго в формате JSON:
 { "score": число_0_100, "priority": "low|medium|high|critical", "sentiment": "neutral|negative|critical", "reasoning": "краткое_обоснование" }`;
 
-  const response = await getGroq().chat.completions.create({
-    model: GROQ_MODEL,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: `${title}\n${description}` },
-    ],
-    response_format: { type: "json_object" },
-    temperature: 0.1,
-    max_tokens: 200,
-  });
+  const response = await withGroqTimeout(
+    getGroq().chat.completions.create({
+      model: GROQ_MODEL,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `${title}\n${description}` },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: 200,
+    })
+  );
 
   const raw = response.choices[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(raw) as Partial<PriorityResult>;
+  const parsed = safeJsonParse<Partial<PriorityResult>>(raw, {});
   const score = typeof parsed.score === "number" ? Math.max(0, Math.min(100, parsed.score)) : 50;
   return {
     score,

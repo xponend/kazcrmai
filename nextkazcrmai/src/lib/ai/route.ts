@@ -1,7 +1,7 @@
 import type { TicketPriority } from "../../models/Ticket";
 import type { UserDoc } from "../../models/User";
 import type { Category } from "./classify";
-import { getGroq, GROQ_MODEL } from "./groqClient";
+import { getGroq, GROQ_MODEL, withGroqTimeout, safeJsonParse } from "./groqClient";
 
 export interface RoutingResult {
   assigneeId: string;
@@ -42,16 +42,22 @@ ${JSON.stringify(operatorList, null, 2)}
 Ответ строго в формате JSON:
 { "assigneeId": "id_оператора", "assigneeName": "имя", "reasoning": "обоснование_выбора" }`;
 
-  const response = await getGroq().chat.completions.create({
-    model: GROQ_MODEL,
-    messages: [{ role: "system", content: system }],
-    response_format: { type: "json_object" },
-    temperature: 0.1,
-    max_tokens: 200,
-  });
-
-  const raw = response.choices[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(raw) as Partial<RoutingResult>;
+  let parsed: Partial<RoutingResult> = {};
+  try {
+    const response = await withGroqTimeout(
+      getGroq().chat.completions.create({
+        model: GROQ_MODEL,
+        messages: [{ role: "system", content: system }],
+        response_format: { type: "json_object" },
+        temperature: 0.1,
+        max_tokens: 200,
+      })
+    );
+    const raw = response.choices[0]?.message?.content ?? "{}";
+    parsed = safeJsonParse<Partial<RoutingResult>>(raw, {});
+  } catch (err) {
+    console.error("routeTicket: Groq call failed, falling back:", (err as Error).message);
+  }
 
   const valid = operators.find((op) => String(op._id) === parsed.assigneeId);
   if (valid) {
@@ -62,9 +68,9 @@ ${JSON.stringify(operatorList, null, 2)}
     };
   }
 
-  // Fallback: skill match + lowest load
+  // Fallback: skill match (exact, not substring) + lowest load
   const skillMatch = operators
-    .filter((op) => op.skills.some((s) => category.includes(s)))
+    .filter((op) => op.skills.includes(category))
     .sort((a, b) => a.currentLoad - b.currentLoad);
   const fallback = skillMatch[0] ?? [...operators].sort((a, b) => a.currentLoad - b.currentLoad)[0]!;
   return {
