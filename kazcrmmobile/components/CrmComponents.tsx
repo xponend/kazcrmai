@@ -135,6 +135,139 @@ export function AiAnalysis({ ticket, aiResult }: AiAnalysisProps) {
   );
 }
 
+// --- AI Assist panel (suggest-reply / summarize / similar) ---
+import { useState } from "react";
+import {
+  aiSuggestReply,
+  aiSummarizeTicket,
+  aiSimilarTickets,
+  type ReplySuggestion,
+  type TicketSummary,
+} from "../api/client";
+
+type AssistTab = "reply" | "summary" | "similar" | null;
+
+export function AiAssist({ ticketId }: { ticketId: string }) {
+  const [tab, setTab] = useState<AssistTab>(null);
+  const [loading, setLoading] = useState(false);
+  const [replies, setReplies] = useState<ReplySuggestion[] | null>(null);
+  const [summary, setSummary] = useState<TicketSummary | null>(null);
+  const [similar, setSimilar] = useState<any[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const open = async (next: AssistTab) => {
+    if (next === null || tab === next) {
+      setTab(null);
+      return;
+    }
+    setError(null);
+    setTab(next);
+    if (next === "reply" && replies === null) {
+      setLoading(true);
+      try {
+        const { data } = await aiSuggestReply(ticketId);
+        setReplies(data.suggestions);
+      } catch (e: any) {
+        setError(e.response?.data?.error ?? "Не удалось получить ответы");
+      } finally {
+        setLoading(false);
+      }
+    } else if (next === "summary" && summary === null) {
+      setLoading(true);
+      try {
+        const { data } = await aiSummarizeTicket(ticketId);
+        setSummary(data);
+      } catch (e: any) {
+        setError(e.response?.data?.error ?? "Не удалось получить саммари");
+      } finally {
+        setLoading(false);
+      }
+    } else if (next === "similar" && similar === null) {
+      setLoading(true);
+      try {
+        const { data } = await aiSimilarTickets(ticketId);
+        setSimilar(data.similar);
+      } catch (e: any) {
+        setError(e.response?.data?.error ?? "Не удалось найти похожие");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const TONE_LABEL: Record<string, string> = {
+    neutral: "Нейтральный",
+    apologetic: "Извинения",
+    actionable: "Действия",
+  };
+
+  return (
+    <View style={styles.assistPanel}>
+      <View style={styles.assistRow}>
+        <TouchableOpacity
+          style={[styles.assistBtn, tab === "reply" && styles.assistBtnActive]}
+          onPress={() => open("reply")}
+        >
+          <Ionicons name="chatbubble-ellipses-outline" size={16} color={tab === "reply" ? "#fff" : "#7c3aed"} />
+          <Text style={[styles.assistBtnText, tab === "reply" && { color: "#fff" }]}>Ответ</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.assistBtn, tab === "summary" && styles.assistBtnActive]}
+          onPress={() => open("summary")}
+        >
+          <Ionicons name="document-text-outline" size={16} color={tab === "summary" ? "#fff" : "#7c3aed"} />
+          <Text style={[styles.assistBtnText, tab === "summary" && { color: "#fff" }]}>Саммари</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.assistBtn, tab === "similar" && styles.assistBtnActive]}
+          onPress={() => open("similar")}
+        >
+          <Ionicons name="git-compare-outline" size={16} color={tab === "similar" ? "#fff" : "#7c3aed"} />
+          <Text style={[styles.assistBtnText, tab === "similar" && { color: "#fff" }]}>Похожие</Text>
+        </TouchableOpacity>
+      </View>
+
+      {tab && (
+        <View style={styles.assistContent}>
+          {loading && <Text style={styles.assistLoading}>Генерируется…</Text>}
+          {error && <Text style={styles.assistError}>{error}</Text>}
+          {!loading && !error && tab === "reply" &&
+            replies?.map((r, i) => (
+              <View key={i} style={styles.assistReply}>
+                <Text style={styles.assistReplyTone}>{TONE_LABEL[r.tone] ?? r.tone}</Text>
+                <Text style={styles.assistReplyBody}>{r.body}</Text>
+              </View>
+            ))}
+          {!loading && !error && tab === "summary" && summary && (
+            <View>
+              <Text style={styles.assistSummary}>{summary.summary}</Text>
+              {summary.keyPoints.map((p, i) => (
+                <Text key={i} style={styles.assistPoint}>• {p}</Text>
+              ))}
+            </View>
+          )}
+          {!loading && !error && tab === "similar" && similar && (
+            <View>
+              {similar.length === 0 ? (
+                <Text style={styles.assistEmpty}>Похожих заявок не найдено</Text>
+              ) : (
+                similar.map((t) => (
+                  <View key={t._id} style={styles.assistSimilar}>
+                    <Text style={styles.assistSimilarTitle}>{t.title}</Text>
+                    <Text style={styles.assistSimilarMeta}>
+                      [{t.aiCategory ?? t.category ?? "—"}] · {t.status}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </View>
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   // Badge
   badge: { flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
@@ -162,4 +295,22 @@ const styles = StyleSheet.create({
   aiConfidence: { fontSize: 11, color: "#7c3aed", fontWeight: "600" },
   aiScore: { fontSize: 12, color: "#6b7280" },
   aiReason: { fontSize: 12, color: "#6b7280", marginTop: 10, lineHeight: 17, fontStyle: "italic" },
+  // AI Assist
+  assistPanel: { marginVertical: 12 },
+  assistRow: { flexDirection: "row", gap: 8 },
+  assistBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: "#fff", borderColor: "#e9d5ff", borderWidth: 1, borderRadius: 10, paddingVertical: 10 },
+  assistBtnActive: { backgroundColor: "#7c3aed", borderColor: "#7c3aed" },
+  assistBtnText: { fontSize: 12, color: "#7c3aed", fontWeight: "600" },
+  assistContent: { backgroundColor: "#fff", borderRadius: 12, padding: 14, marginTop: 10, borderWidth: 1, borderColor: "#e5e7eb" },
+  assistLoading: { color: "#7c3aed", fontSize: 13, fontStyle: "italic" },
+  assistError: { color: "#dc2626", fontSize: 13 },
+  assistEmpty: { color: "#9ca3af", fontSize: 13, fontStyle: "italic" },
+  assistReply: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
+  assistReplyTone: { fontSize: 11, fontWeight: "700", color: "#7c3aed", marginBottom: 4, textTransform: "uppercase" },
+  assistReplyBody: { fontSize: 13, color: "#374151", lineHeight: 19 },
+  assistSummary: { fontSize: 14, fontWeight: "600", color: "#111827", marginBottom: 8, lineHeight: 19 },
+  assistPoint: { fontSize: 12, color: "#4b5563", marginVertical: 2, lineHeight: 17 },
+  assistSimilar: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
+  assistSimilarTitle: { fontSize: 13, color: "#111827", marginBottom: 3 },
+  assistSimilarMeta: { fontSize: 11, color: "#9ca3af" },
 });

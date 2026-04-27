@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "rea
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getTicket, updateTicket } from "../../api/client";
-import { AiAnalysis, PriorityBadge, StatusBadge } from "../../components/CrmComponents";
+import { AiAnalysis, AiAssist, PriorityBadge, StatusBadge } from "../../components/CrmComponents";
 
 const NEXT_STATUS: Record<string, string> = {
   new: "in_progress",
@@ -85,6 +85,9 @@ export default function TicketDetailScreen() {
 
       {/* AI Analysis */}
       <AiAnalysis ticket={ticket} />
+
+      {/* AI assist (suggest reply / summarize / similar) */}
+      <AiAssist ticketId={String(id)} />
 
       {/* Status action button */}
       {NEXT_STATUS[ticket.status] && (
