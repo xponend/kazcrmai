@@ -9,6 +9,7 @@ import ticketRoutes from "./routes/tickets";
 import { clientRouter, userRouter } from "./routes/resources";
 import analyticsRoutes from "./routes/analytics";
 import insightsRoutes from "./routes/insights";
+import aiChatRoutes from "./routes/aiChat";
 import { apiLimiter } from "./middleware/rateLimit";
 import { User } from "./models/User";
 import { runSeed } from "./seed";
@@ -53,6 +54,7 @@ app.use("/api/clients", clientRouter);
 app.use("/api/users", userRouter);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/insights", insightsRoutes);
+app.use("/api/ai", aiChatRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({

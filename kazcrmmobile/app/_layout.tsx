@@ -39,6 +39,15 @@ export default function RootLayout() {
               presentation: "modal",
             }}
           />
+          <Stack.Screen
+            name="ai-chat"
+            options={{
+              headerShown: true,
+              title: "ИИ-ассистент",
+              headerTintColor: "#7c3aed",
+              presentation: "modal",
+            }}
+          />
         </Stack.Protected>
         <Stack.Protected guard={!user}>
           <Stack.Screen name="login" />

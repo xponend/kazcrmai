@@ -223,4 +223,15 @@ export type ClientProfileResult = {
 export const aiClientProfile = (clientId: string) =>
   api.post<ClientProfileResult>(`/clients/${clientId}/ai/profile`);
 
+export type ChatTurn = { role: "user" | "assistant"; content: string };
+
+export type ChatResponse = {
+  reply: string;
+  contextStats: { total: number; open: number; critical: number; resolvedLast24h: number };
+  contextSize: number;
+};
+
+export const aiChat = (message: string, history: ChatTurn[] = []) =>
+  api.post<ChatResponse>("/ai/chat", { message, history });
+
 export default api;

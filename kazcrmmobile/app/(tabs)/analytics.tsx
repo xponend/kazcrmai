@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, Text, ScrollView, StyleSheet, RefreshControl, Dimensions, TouchableOpacity } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { PieChart, BarChart } from "react-native-chart-kit";
 import { getAnalytics, aiDigest, type DigestResponse } from "../../api/client";
@@ -25,6 +25,7 @@ const DIGEST_WINDOWS = [
 ];
 
 export default function AnalyticsScreen() {
+  const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [digest, setDigest] = useState<DigestResponse | null>(null);
   const [digestLoading, setDigestLoading] = useState(false);
@@ -95,6 +96,18 @@ export default function AnalyticsScreen() {
         />
       }
     >
+      {/* AI Chat entry */}
+      <TouchableOpacity style={styles.chatEntry} onPress={() => router.push("/ai-chat" as any)}>
+        <View style={styles.chatEntryLeft}>
+          <Ionicons name="chatbubbles" size={18} color="#7c3aed" />
+          <View>
+            <Text style={styles.chatEntryTitle}>Спросить ИИ-ассистента</Text>
+            <Text style={styles.chatEntrySub}>Вопросы по заявкам в свободной форме</Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
+      </TouchableOpacity>
+
       {/* AI Digest */}
       {!digestUnavailable && (
         <View style={styles.digestCard}>
@@ -246,4 +259,9 @@ const styles = StyleSheet.create({
   digestLabel: { fontSize: 11, fontWeight: "700", color: "#7c3aed", textTransform: "uppercase", marginBottom: 4 },
   digestPoint: { fontSize: 12, color: "#374151", marginVertical: 2, lineHeight: 17 },
   digestRec: { fontSize: 12, color: "#0f766e", marginVertical: 2, lineHeight: 17, fontWeight: "500" },
+  // Chat entry
+  chatEntry: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fff", borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: "#e9d5ff" },
+  chatEntryLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  chatEntryTitle: { fontSize: 14, fontWeight: "700", color: "#111827" },
+  chatEntrySub: { fontSize: 11, color: "#6b7280", marginTop: 2 },
 });
