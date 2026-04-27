@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "KazCRM AI",
+    "slug": "kazcrmmobile",
+    "owner": "sultandelux",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "kazcrmmobile",
+    "userInterfaceStyle": "automatic",
+    "platforms": ["ios", "android"],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "kz.kazcrmai.mobile"
+    },
+    "android": {
+      "package": "kz.kazcrmai.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#1e40af"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1e40af",
+          "resizeMode": "contain"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "db280bc1-ad39-4958-8ec1-cb8096a316da"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/db280bc1-ad39-4958-8ec1-cb8096a316da"
+    }
+  }
+}
