@@ -7,7 +7,10 @@
     "orientation": "portrait",
     "scheme": "kazcrmmobile",
     "userInterfaceStyle": "automatic",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
@@ -31,7 +34,8 @@
           "backgroundColor": "#1e40af",
           "resizeMode": "contain"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
