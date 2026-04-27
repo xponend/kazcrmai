@@ -171,4 +171,17 @@ export const getOperators = () => api.get("/users/operators");
 
 export const getAnalytics = () => api.get("/analytics");
 
+// AI assist endpoints (require the new backend deploy)
+export type ReplySuggestion = { tone: "neutral" | "apologetic" | "actionable"; body: string };
+export type TicketSummary = { summary: string; keyPoints: string[] };
+
+export const aiSuggestReply = (ticketId: string) =>
+  api.post<{ suggestions: ReplySuggestion[] }>(`/tickets/${ticketId}/ai/suggest-reply`);
+
+export const aiSummarizeTicket = (ticketId: string) =>
+  api.post<TicketSummary>(`/tickets/${ticketId}/ai/summarize`);
+
+export const aiSimilarTickets = (ticketId: string, limit = 5) =>
+  api.get(`/tickets/${ticketId}/ai/similar`, { params: { limit } });
+
 export default api;
