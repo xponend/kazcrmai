@@ -1,12 +1,91 @@
 import { Router, type RequestHandler } from "express";
 import jwt, { type SignOptions } from "jsonwebtoken";
-import { User } from "../models/User";
+import crypto from "crypto";
+import { User, type RefreshTokenEntry, type UserDoc } from "../models/User";
 import { auth } from "../middleware/auth";
+import { env } from "../config/env";
+import { loginLimiter } from "../middleware/rateLimit";
 
-const SECRET = process.env.JWT_SECRET || "dev_jwt_secret_change_me";
-const TOKEN_TTL: SignOptions["expiresIn"] = "30d";
+const ACCESS_TTL: SignOptions["expiresIn"] = env.ACCESS_TOKEN_TTL as SignOptions["expiresIn"];
+const REFRESH_TTL_MS = env.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000;
+const MAX_ACTIVE_REFRESH_TOKENS = 5;
 
 const router = Router();
+
+function publicUser(u: UserDoc) {
+  return { id: u._id, name: u.name, email: u.email, role: u.role };
+}
+
+function signAccessToken(u: UserDoc): string {
+  return jwt.sign({ id: String(u._id), tv: u.tokenVersion }, env.JWT_SECRET, {
+    expiresIn: ACCESS_TTL,
+  });
+}
+
+function generateRefreshToken(): { raw: string; hash: string; expiresAt: Date } {
+  const raw = crypto.randomBytes(48).toString("base64url");
+  const hash = crypto.createHash("sha256").update(raw).digest("hex");
+  return { raw, hash, expiresAt: new Date(Date.now() + REFRESH_TTL_MS) };
+}
+
+async function issueRefreshToken(user: UserDoc): Promise<string> {
+  const { raw, hash, expiresAt } = generateRefreshToken();
+  const now = Date.now();
+  const surviving = (user.refreshTokens ?? []).filter((t) => t.expiresAt.getTime() > now);
+  surviving.push({ tokenHash: hash, expiresAt, createdAt: new Date() });
+  user.refreshTokens = surviving.slice(-MAX_ACTIVE_REFRESH_TOKENS);
+  await user.save();
+  return raw;
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+}
+
+const register: RequestHandler = async (req, res) => {
+  try {
+    const { name, email, password } = req.body as {
+      name?: string;
+      email?: string;
+      password?: string;
+    };
+    if (!name || !email || !password) {
+      res.status(400).json({ error: "Имя, email и пароль обязательны" });
+      return;
+    }
+    if (!isValidEmail(email)) {
+      res.status(400).json({ error: "Некорректный email" });
+      return;
+    }
+    if (password.length < 8) {
+      res.status(400).json({ error: "Пароль должен быть не менее 8 символов" });
+      return;
+    }
+
+    const exists = await User.findOne({ email: email.toLowerCase() });
+    if (exists) {
+      res.status(409).json({ error: "Пользователь с таким email уже существует" });
+      return;
+    }
+
+    const user = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password,
+      role: "operator",
+    });
+    // Reload with refreshTokens field selected so issueRefreshToken can persist.
+    const userWithRefresh = await User.findById(user._id).select("+refreshTokens");
+    if (!userWithRefresh) throw new Error("Failed to load created user");
+
+    const accessToken = signAccessToken(userWithRefresh);
+    const refreshToken = await issueRefreshToken(userWithRefresh);
+    res.status(201).json({ accessToken, refreshToken, user: publicUser(userWithRefresh) });
+  } catch (err) {
+    console.error("register error:", (err as Error).message);
+    res.status(500).json({ error: "Не удалось создать пользователя" });
+  }
+};
 
 const login: RequestHandler = async (req, res) => {
   try {
@@ -15,27 +94,99 @@ const login: RequestHandler = async (req, res) => {
       res.status(400).json({ error: "Email и пароль обязательны" });
       return;
     }
-    const user = await User.findOne({ email }).select("+password");
-    if (!user || !(await user.comparePassword(password))) {
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+password +refreshTokens");
+    if (!user || !user.isActive || !(await user.comparePassword(password))) {
       res.status(401).json({ error: "Неверный email или пароль" });
       return;
     }
-    const token = jwt.sign({ id: String(user._id) }, SECRET, { expiresIn: TOKEN_TTL });
-    res.json({
-      token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
-    });
+    const accessToken = signAccessToken(user);
+    const refreshToken = await issueRefreshToken(user);
+    res.json({ accessToken, refreshToken, user: publicUser(user) });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    console.error("login error:", (err as Error).message);
+    res.status(500).json({ error: "Ошибка входа" });
+  }
+};
+
+const refresh: RequestHandler = async (req, res) => {
+  try {
+    const { refreshToken } = req.body as { refreshToken?: string };
+    if (!refreshToken) {
+      res.status(400).json({ error: "refreshToken обязателен" });
+      return;
+    }
+    const hash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+    const user = await User.findOne({ "refreshTokens.tokenHash": hash }).select("+refreshTokens");
+    if (!user || !user.isActive) {
+      res.status(401).json({ error: "Сессия не найдена", code: "REFRESH_INVALID" });
+      return;
+    }
+    const entry = user.refreshTokens.find((t) => t.tokenHash === hash);
+    if (!entry || entry.expiresAt.getTime() <= Date.now()) {
+      // Token is expired or missing — drop it and reject.
+      user.refreshTokens = user.refreshTokens.filter((t) => t.tokenHash !== hash);
+      await user.save();
+      res.status(401).json({ error: "Сессия истекла", code: "REFRESH_EXPIRED" });
+      return;
+    }
+    // Rotate: replace this entry with a fresh one.
+    user.refreshTokens = user.refreshTokens.filter((t) => t.tokenHash !== hash);
+    const newRefresh = await issueRefreshToken(user);
+    const accessToken = signAccessToken(user);
+    res.json({ accessToken, refreshToken: newRefresh });
+  } catch (err) {
+    console.error("refresh error:", (err as Error).message);
+    res.status(500).json({ error: "Ошибка обновления сессии" });
+  }
+};
+
+const logout: RequestHandler = async (req, res) => {
+  try {
+    const { refreshToken, allDevices } = req.body as {
+      refreshToken?: string;
+      allDevices?: boolean;
+    };
+    const userId = req.user?._id;
+    if (!userId) {
+      res.status(401).json({ error: "Не авторизовано" });
+      return;
+    }
+    const user = await User.findById(userId).select("+refreshTokens");
+    if (!user) {
+      res.status(401).json({ error: "Пользователь не найден" });
+      return;
+    }
+
+    if (allDevices) {
+      user.refreshTokens = [];
+      user.tokenVersion = (user.tokenVersion ?? 0) + 1;
+    } else if (refreshToken) {
+      const hash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+      user.refreshTokens = user.refreshTokens.filter((t) => t.tokenHash !== hash);
+    } else {
+      user.refreshTokens = [];
+    }
+    await user.save();
+    res.status(204).end();
+  } catch (err) {
+    console.error("logout error:", (err as Error).message);
+    res.status(500).json({ error: "Ошибка выхода" });
   }
 };
 
 const me: RequestHandler = (req, res) => {
-  const u = req.user!;
-  res.json({ user: { id: u._id, name: u.name, email: u.email, role: u.role } });
+  const u = req.user;
+  if (!u) {
+    res.status(401).json({ error: "Не авторизовано" });
+    return;
+  }
+  res.json({ user: publicUser(u) });
 };
 
-router.post("/login", login);
+router.post("/register", loginLimiter, register);
+router.post("/login", loginLimiter, login);
+router.post("/refresh", refresh);
+router.post("/logout", auth, logout);
 router.get("/me", auth, me);
 
 export default router;
