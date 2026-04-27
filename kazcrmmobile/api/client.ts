@@ -3,6 +3,16 @@ import * as SecureStore from "expo-secure-store";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000/api";
 
+// Catch the common production misconfiguration: building a release without
+// EXPO_PUBLIC_API_URL set means the app silently points at localhost.
+if (!process.env.EXPO_PUBLIC_API_URL && !__DEV__) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    "EXPO_PUBLIC_API_URL is not set in this build — falling back to localhost. " +
+      "Set it via EAS env vars before publishing a release."
+  );
+}
+
 const ACCESS_KEY = "accessToken";
 const REFRESH_KEY = "refreshToken";
 
