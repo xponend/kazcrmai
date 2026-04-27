@@ -61,6 +61,96 @@ const SUMMARY_PROMPT = `Ты — аналитик CRM. По обращению �
 Без воды, без оценок, только факты. Ответ строго в формате JSON:
 { "summary": "...", "keyPoints": ["...", "..."] }`;
 
+export interface PlaybookStep {
+  index: number;
+  action: string;
+  detail: string;
+}
+
+export interface PlaybookResult {
+  steps: PlaybookStep[];
+  estimatedMinutes: number;
+  escalateIf: string[];
+}
+
+const PLAYBOOK_PROMPT = `Ты — старший инженер техподдержки. По текущей заявке и нескольким похожим уже решённым составь план действий для оператора.
+
+Требования:
+- "steps": 4-6 пунктов. Каждый: "action" (короткая команда, повелительное наклонение, ≤ 70 символов) + "detail" (1-2 предложения с уточнением).
+- Шаги конкретные: какие логи смотреть, какие команды запускать, что у клиента уточнить, в каком порядке.
+- Опирайся на похожие резолвы (если есть в контексте). Не пиши общие фразы вроде "уточнить детали".
+- "estimatedMinutes": реалистичная оценка в минутах для всего плана.
+- "escalateIf": 1-3 чётких триггера, когда передавать заявку выше (например: "если логи показывают X").
+
+Ответ строго в формате JSON:
+{ "steps": [{"index":1,"action":"...","detail":"..."}], "estimatedMinutes": 30, "escalateIf": ["..."] }`;
+
+export interface PlaybookInput {
+  title: string;
+  description: string;
+  category?: string;
+  priority: string;
+  similarResolved: Array<{ title: string; resolutionNotes?: string; resolvedAtMins?: number }>;
+}
+
+export async function generatePlaybook(input: PlaybookInput): Promise<PlaybookResult> {
+  const userPrompt = `Текущая заявка:
+- Тема: ${input.title}
+- Описание: ${input.description}
+- Категория: ${input.category ?? "не определена"}
+- Приоритет: ${input.priority}
+
+Похожие уже решённые заявки (для опоры):
+${
+  input.similarResolved.length === 0
+    ? "(нет в истории — составь план с нуля по категории)"
+    : input.similarResolved
+        .map(
+          (s, i) =>
+            `${i + 1}. ${s.title}${s.resolvedAtMins ? ` — закрыто за ${s.resolvedAtMins}мин` : ""}${
+              s.resolutionNotes ? `\n   Заметки: ${s.resolutionNotes.slice(0, 250)}` : ""
+            }`
+        )
+        .join("\n")
+}`;
+
+  const response = await withGroqTimeout(
+    getGroq().chat.completions.create({
+      model: GROQ_MODEL,
+      messages: [
+        { role: "system", content: PLAYBOOK_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      max_tokens: 800,
+    })
+  );
+
+  const raw = response.choices[0]?.message?.content ?? "{}";
+  const parsed = safeJsonParse<Partial<PlaybookResult>>(raw, {});
+  const steps = Array.isArray(parsed.steps)
+    ? parsed.steps
+        .filter(
+          (s): s is PlaybookStep =>
+            s !== null &&
+            typeof s === "object" &&
+            typeof (s as PlaybookStep).action === "string" &&
+            typeof (s as PlaybookStep).detail === "string"
+        )
+        .slice(0, 6)
+        .map((s, i) => ({ index: i + 1, action: s.action, detail: s.detail }))
+    : [];
+  const estimatedMinutes =
+    typeof parsed.estimatedMinutes === "number" && parsed.estimatedMinutes > 0
+      ? Math.min(480, Math.round(parsed.estimatedMinutes))
+      : 0;
+  const escalateIf = Array.isArray(parsed.escalateIf)
+    ? parsed.escalateIf.filter((s): s is string => typeof s === "string").slice(0, 3)
+    : [];
+  return { steps, estimatedMinutes, escalateIf };
+}
+
 export async function summarizeTicket(title: string, description: string): Promise<SummaryResult> {
   const response = await withGroqTimeout(
     getGroq().chat.completions.create({

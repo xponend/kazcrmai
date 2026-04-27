@@ -141,11 +141,13 @@ import {
   aiSuggestReply,
   aiSummarizeTicket,
   aiSimilarTickets,
+  aiTicketPlaybook,
   type ReplySuggestion,
   type TicketSummary,
+  type PlaybookResult,
 } from "../api/client";
 
-type AssistTab = "reply" | "summary" | "similar" | null;
+type AssistTab = "reply" | "summary" | "similar" | "playbook" | null;
 
 export function AiAssist({ ticketId }: { ticketId: string }) {
   const [tab, setTab] = useState<AssistTab>(null);
@@ -153,6 +155,7 @@ export function AiAssist({ ticketId }: { ticketId: string }) {
   const [replies, setReplies] = useState<ReplySuggestion[] | null>(null);
   const [summary, setSummary] = useState<TicketSummary | null>(null);
   const [similar, setSimilar] = useState<any[] | null>(null);
+  const [playbook, setPlaybook] = useState<PlaybookResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const open = async (next: AssistTab) => {
@@ -192,6 +195,16 @@ export function AiAssist({ ticketId }: { ticketId: string }) {
       } finally {
         setLoading(false);
       }
+    } else if (next === "playbook" && playbook === null) {
+      setLoading(true);
+      try {
+        const { data } = await aiTicketPlaybook(ticketId);
+        setPlaybook(data);
+      } catch (e: any) {
+        setError(e.response?.data?.error ?? "Не удалось получить план");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -224,6 +237,13 @@ export function AiAssist({ ticketId }: { ticketId: string }) {
         >
           <Ionicons name="git-compare-outline" size={16} color={tab === "similar" ? "#fff" : "#7c3aed"} />
           <Text style={[styles.assistBtnText, tab === "similar" && { color: "#fff" }]}>Похожие</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.assistBtn, tab === "playbook" && styles.assistBtnActive]}
+          onPress={() => open("playbook")}
+        >
+          <Ionicons name="list-outline" size={16} color={tab === "playbook" ? "#fff" : "#7c3aed"} />
+          <Text style={[styles.assistBtnText, tab === "playbook" && { color: "#fff" }]}>План</Text>
         </TouchableOpacity>
       </View>
 
@@ -259,6 +279,32 @@ export function AiAssist({ ticketId }: { ticketId: string }) {
                     </Text>
                   </View>
                 ))
+              )}
+            </View>
+          )}
+          {!loading && !error && tab === "playbook" && playbook && (
+            <View>
+              {playbook.estimatedMinutes > 0 && (
+                <Text style={styles.playbookMeta}>
+                  ≈ {playbook.estimatedMinutes} мин · {playbook.similarCount} похожих в истории
+                </Text>
+              )}
+              {playbook.steps.map((s) => (
+                <View key={s.index} style={styles.playbookStep}>
+                  <Text style={styles.playbookIdx}>{s.index}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.playbookAction}>{s.action}</Text>
+                    <Text style={styles.playbookDetail}>{s.detail}</Text>
+                  </View>
+                </View>
+              ))}
+              {playbook.escalateIf.length > 0 && (
+                <View style={styles.playbookEscalate}>
+                  <Text style={styles.playbookEscalateLabel}>Эскалировать, если:</Text>
+                  {playbook.escalateIf.map((e, i) => (
+                    <Text key={i} style={styles.playbookEscalateItem}>⚠ {e}</Text>
+                  ))}
+                </View>
               )}
             </View>
           )}
@@ -313,4 +359,13 @@ const styles = StyleSheet.create({
   assistSimilar: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
   assistSimilarTitle: { fontSize: 13, color: "#111827", marginBottom: 3 },
   assistSimilarMeta: { fontSize: 11, color: "#9ca3af" },
+  // Playbook
+  playbookMeta: { fontSize: 11, color: "#7c3aed", fontWeight: "600", marginBottom: 10 },
+  playbookStep: { flexDirection: "row", gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
+  playbookIdx: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#7c3aed", color: "#fff", textAlign: "center", lineHeight: 22, fontSize: 12, fontWeight: "700" },
+  playbookAction: { fontSize: 13, fontWeight: "600", color: "#111827", marginBottom: 2 },
+  playbookDetail: { fontSize: 12, color: "#6b7280", lineHeight: 17 },
+  playbookEscalate: { marginTop: 10, padding: 8, backgroundColor: "#fef3c7", borderRadius: 8 },
+  playbookEscalateLabel: { fontSize: 11, fontWeight: "700", color: "#92400e", marginBottom: 4, textTransform: "uppercase" },
+  playbookEscalateItem: { fontSize: 12, color: "#92400e", marginVertical: 2 },
 });

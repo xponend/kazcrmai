@@ -4,7 +4,7 @@ import { TicketHistory } from "../models/TicketHistory";
 import { User } from "../models/User";
 import { auth } from "../middleware/auth";
 import { processNewTicket } from "../lib/ai/orchestrator";
-import { suggestReplies, summarizeTicket } from "../lib/ai/assist";
+import { suggestReplies, summarizeTicket, generatePlaybook } from "../lib/ai/assist";
 import { classifyTicket } from "../lib/ai/classify";
 import { prioritizeTicket } from "../lib/ai/prioritize";
 import { clampInt, isObjectId, isNonEmptyString } from "../lib/validate";
@@ -386,9 +386,67 @@ const aiPreview: RequestHandler = async (req, res) => {
   }
 };
 
+const aiPlaybook: RequestHandler = async (req, res) => {
+  try {
+    const ticket = await loadTicketWithAuth(req, res);
+    if (!ticket) return;
+
+    // Pull a few similar resolved tickets for context, with their resolution comments.
+    const filter: Record<string, unknown> = {
+      _id: { $ne: ticket._id },
+      status: { $in: ["resolved", "closed"] },
+    };
+    if (ticket.aiCategory) filter.aiCategory = ticket.aiCategory;
+    const similar = await Ticket.find(filter)
+      .sort({ resolvedAt: -1, createdAt: -1 })
+      .limit(5)
+      .select("_id title resolvedAt createdAt");
+
+    const histories = similar.length
+      ? await TicketHistory.find({
+          ticketId: { $in: similar.map((s) => s._id) },
+          comment: { $exists: true, $ne: "" },
+        }).select("ticketId comment action")
+      : [];
+    const notesByTicket = new Map<string, string[]>();
+    for (const h of histories) {
+      const key = String(h.ticketId);
+      if (!notesByTicket.has(key)) notesByTicket.set(key, []);
+      notesByTicket.get(key)!.push(h.comment ?? "");
+    }
+
+    const similarResolved = similar.map((s) => ({
+      title: s.title,
+      resolutionNotes: (notesByTicket.get(String(s._id)) ?? []).join(" | ").slice(0, 500),
+      resolvedAtMins:
+        s.resolvedAt && s.createdAt
+          ? Math.round((s.resolvedAt.getTime() - s.createdAt.getTime()) / 60_000)
+          : undefined,
+    }));
+
+    const playbook = await generatePlaybook({
+      title: ticket.title,
+      description: ticket.description,
+      category: ticket.aiCategory ?? ticket.category,
+      priority: ticket.priority,
+      similarResolved,
+    });
+
+    if (playbook.steps.length === 0) {
+      fail(res, 502, "Не удалось сформировать план", "AI_EMPTY");
+      return;
+    }
+    res.json({ ...playbook, similarCount: similar.length });
+  } catch (err) {
+    console.error("tickets.aiPlaybook error:", (err as Error).message);
+    fail(res, 502, "Сервис ИИ временно недоступен", "AI_FAILED");
+  }
+};
+
 router.post("/:id/ai/suggest-reply", auth, aiSuggestReply);
 router.post("/:id/ai/summarize", auth, aiSummarize);
 router.get("/:id/ai/similar", auth, aiSimilar);
+router.post("/:id/ai/playbook", auth, aiPlaybook);
 router.post("/preview", auth, aiPreview);
 
 export default router;

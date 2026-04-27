@@ -184,6 +184,17 @@ export const aiSummarizeTicket = (ticketId: string) =>
 export const aiSimilarTickets = (ticketId: string, limit = 5) =>
   api.get(`/tickets/${ticketId}/ai/similar`, { params: { limit } });
 
+export type PlaybookStep = { index: number; action: string; detail: string };
+export type PlaybookResult = {
+  steps: PlaybookStep[];
+  estimatedMinutes: number;
+  escalateIf: string[];
+  similarCount: number;
+};
+
+export const aiTicketPlaybook = (ticketId: string) =>
+  api.post<PlaybookResult>(`/tickets/${ticketId}/ai/playbook`);
+
 export type AiPreviewResult = {
   classification: { category: string; confidence: number; reasoning: string };
   priority: { score: number; priority: string; sentiment: string; reasoning: string };
