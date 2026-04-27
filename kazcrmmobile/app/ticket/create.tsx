@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { createTicket, getClients } from "../../api/client";
+import { createTicket, getClients, aiPreviewTicket, type AiPreviewResult } from "../../api/client";
 import { AiAnalysis } from "../../components/CrmComponents";
 
 type AiStep = { label: string; done: boolean; result?: string };
@@ -16,6 +16,9 @@ export default function CreateTicketScreen() {
   const [aiSteps, setAiSteps] = useState<AiStep[]>([]);
   const [aiResult, setAiResult] = useState<any>(null);
   const [createdTicket, setCreatedTicket] = useState<any>(null);
+  const [preview, setPreview] = useState<AiPreviewResult | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewUnavailable, setPreviewUnavailable] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -24,6 +27,27 @@ export default function CreateTicketScreen() {
       if (data.clients.length > 0) setSelectedClient(data.clients[0]._id);
     });
   }, []);
+
+  // Live AI preview: debounced predict-only call as the user types.
+  useEffect(() => {
+    if (previewUnavailable) return;
+    if (title.trim().length < 8 || description.trim().length < 20) {
+      setPreview(null);
+      return;
+    }
+    const handle = setTimeout(async () => {
+      setPreviewLoading(true);
+      try {
+        const { data } = await aiPreviewTicket({ title, description });
+        setPreview(data);
+      } catch (err: any) {
+        if (err.response?.status === 404) setPreviewUnavailable(true);
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 1500);
+    return () => clearTimeout(handle);
+  }, [title, description, previewUnavailable]);
 
   const handleSubmit = async () => {
     if (!title.trim() || !description.trim()) {
@@ -131,6 +155,42 @@ export default function CreateTicketScreen() {
           <Text style={styles.label}>Описание</Text>
           <TextInput style={[styles.input, styles.textarea]} value={description} onChangeText={setDescription} placeholder="Подробное описание проблемы или запроса клиента..." placeholderTextColor="#9ca3af" multiline numberOfLines={6} textAlignVertical="top" />
 
+          {(previewLoading || preview) && !previewUnavailable && (
+            <View style={styles.previewCard}>
+              <View style={styles.previewHeader}>
+                <Ionicons name="sparkles" size={14} color="#7c3aed" />
+                <Text style={styles.previewTitle}>ИИ предсказывает</Text>
+                {previewLoading && <Text style={styles.previewMuted}>анализирует…</Text>}
+              </View>
+              {preview && (
+                <View style={styles.previewRow}>
+                  <Text style={styles.previewLabel}>Категория</Text>
+                  <Text style={styles.previewValue}>
+                    {preview.classification.category}{" "}
+                    <Text style={styles.previewMuted}>
+                      {Math.round(preview.classification.confidence * 100)}%
+                    </Text>
+                  </Text>
+                </View>
+              )}
+              {preview && (
+                <View style={styles.previewRow}>
+                  <Text style={styles.previewLabel}>Приоритет</Text>
+                  <Text
+                    style={[
+                      styles.previewValue,
+                      preview.priority.priority === "critical" && { color: "#dc2626" },
+                      preview.priority.priority === "high" && { color: "#f59e0b" },
+                    ]}
+                  >
+                    {preview.priority.priority}{" "}
+                    <Text style={styles.previewMuted}>{preview.priority.score}/100</Text>
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
           <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
             <Ionicons name="sparkles" size={20} color="#fff" />
             <Text style={styles.submitText}>Создать и запустить ИИ-анализ</Text>
@@ -171,6 +231,14 @@ const styles = StyleSheet.create({
   clientChipText: { fontSize: 12, color: "#374151", fontWeight: "500" },
   submitBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#7c3aed", padding: 16, borderRadius: 12, marginTop: 24 },
   submitText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  // Live AI preview
+  previewCard: { backgroundColor: "#f5f3ff", borderRadius: 10, padding: 12, marginTop: 12, borderWidth: 1, borderColor: "#e9d5ff" },
+  previewHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 },
+  previewTitle: { fontSize: 12, fontWeight: "700", color: "#7c3aed", textTransform: "uppercase", flex: 1 },
+  previewRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 },
+  previewLabel: { fontSize: 12, color: "#6b7280" },
+  previewValue: { fontSize: 13, fontWeight: "600", color: "#111827" },
+  previewMuted: { fontSize: 11, color: "#9ca3af", fontStyle: "italic", fontWeight: "400" },
   // Processing animation
   processingContainer: { alignItems: "center", paddingTop: 40 },
   processingTitle: { fontSize: 18, fontWeight: "700", color: "#7c3aed", marginBottom: 30 },
