@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# webkazcrmai
 
-## Getting Started
+Next.js 16 admin panel for the kazcrmai backend. Talks to the same Express API
+as the mobile app (`https://kazcrm.onrender.com/api`), so all three components
+share auth and AI features end-to-end.
 
-First, run the development server:
+## Pages
+
+- `/login` — JWT login (handles both legacy `{token,user}` and new
+  `{accessToken,refreshToken,user}` server shapes).
+- `/` — tickets list with status filters.
+- `/tickets/new` — create form with **live AI preview**: as you type,
+  category and priority predictions appear after a 1.5s debounce.
+- `/tickets/[id]` — detail with **all AI features wired**:
+  - Reply suggestions (3 tones)
+  - Summarize (1-line + bullets)
+  - Similar resolved tickets (mongo `$text`)
+  - Resolution playbook (steps + estimate + escalation triggers)
+  - RU/KK/EN inline translation
+  - Operator comments
+  - Timeline + status advance
+- `/clients` — list + search; "ИИ-профиль" opens AI-generated client
+  persona (tone, recurring topics, risk flags).
+- `/analytics` — KPI tiles, by-category + operator-load tables, **AI
+  digest** with selectable window (24ч/7д/30д).
+- `/chat` — natural-language chatbot over ticket data, with quick prompts.
+
+## Run
 
 ```bash
-npm run dev
-# or
+yarn install
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Defaults to `http://localhost:3000`. To point at a different backend, edit
+`.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+NEXT_PUBLIC_API_URL=https://kazcrm.onrender.com/api
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Demo creds
 
-## Learn More
+```
+admin@crm.kz / admin123       (admin — sees all)
+aliya@crm.kz / pass123         (manager — analytics + digest)
+aizhan@crm.kz / pass123        (operator — own tickets only, no analytics)
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Architecture notes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Auth**: JWT in localStorage with refresh-on-401 interceptor. Same
+  `normalizeAuthResponse` adapter as the mobile app — works against
+  legacy and hardened backend without code changes.
+- **Route guard**: `<AuthProvider>` redirects unauthenticated users to
+  `/login`, signed-in users away from `/login`. Sidebar layout renders
+  only when the auth context resolves a user.
+- **AI graceful degradation**: every AI panel hides itself silently if
+  the endpoint returns 404 (legacy backend) or 403 (operator hitting an
+  admin-only endpoint).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Vercel (recommended) — connect the repo and set `NEXT_PUBLIC_API_URL`. No
+server-side state, fully static + client.
