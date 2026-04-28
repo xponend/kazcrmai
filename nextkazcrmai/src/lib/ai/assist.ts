@@ -1,5 +1,54 @@
 import { getGroq, GROQ_MODEL, withGroqTimeout, safeJsonParse } from "./groqClient";
 
+export type TargetLang = "ru" | "kk" | "en";
+
+const LANG_LABEL: Record<TargetLang, string> = {
+  ru: "русский",
+  kk: "казахский",
+  en: "английский",
+};
+
+export interface TranslationResult {
+  title: string;
+  description: string;
+  lang: TargetLang;
+}
+
+const TRANSLATE_PROMPT = (target: TargetLang) =>
+  `Ты — переводчик. Переведи заголовок и описание заявки на ${LANG_LABEL[target]} язык.
+Сохрани смысл, имена собственные, технические термины (например, API, 1С, Halyk Pay) — не переводи их.
+Тон — официально-деловой.
+
+Ответ строго в формате JSON:
+{ "title": "...", "description": "..." }`;
+
+export async function translateTicket(
+  title: string,
+  description: string,
+  target: TargetLang
+): Promise<TranslationResult> {
+  const response = await withGroqTimeout(
+    getGroq().chat.completions.create({
+      model: GROQ_MODEL,
+      messages: [
+        { role: "system", content: TRANSLATE_PROMPT(target) },
+        { role: "user", content: `Заголовок: ${title}\n\nОписание: ${description}` },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: 1500,
+    })
+  );
+  const raw = response.choices[0]?.message?.content ?? "{}";
+  const parsed = safeJsonParse<{ title?: string; description?: string }>(raw, {});
+  return {
+    title: typeof parsed.title === "string" ? parsed.title : title,
+    description: typeof parsed.description === "string" ? parsed.description : description,
+    lang: target,
+  };
+}
+
+
 export interface ReplySuggestion {
   tone: "neutral" | "apologetic" | "actionable";
   body: string;

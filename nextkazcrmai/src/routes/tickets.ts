@@ -4,7 +4,7 @@ import { TicketHistory } from "../models/TicketHistory";
 import { User } from "../models/User";
 import { auth } from "../middleware/auth";
 import { processNewTicket } from "../lib/ai/orchestrator";
-import { suggestReplies, summarizeTicket, generatePlaybook } from "../lib/ai/assist";
+import { suggestReplies, summarizeTicket, generatePlaybook, translateTicket, type TargetLang } from "../lib/ai/assist";
 import { classifyTicket } from "../lib/ai/classify";
 import { prioritizeTicket } from "../lib/ai/prioritize";
 import { clampInt, isObjectId, isNonEmptyString } from "../lib/validate";
@@ -443,10 +443,54 @@ const aiPlaybook: RequestHandler = async (req, res) => {
   }
 };
 
+const VALID_LANGS = new Set<TargetLang>(["ru", "kk", "en"]);
+
+const aiTranslate: RequestHandler = async (req, res) => {
+  try {
+    const ticket = await loadTicketWithAuth(req, res);
+    if (!ticket) return;
+    const target = req.query.to as TargetLang | undefined;
+    if (!target || !VALID_LANGS.has(target)) {
+      fail(res, 400, "Целевой язык: ru | kk | en");
+      return;
+    }
+    const result = await translateTicket(ticket.title, ticket.description, target);
+    res.json(result);
+  } catch (err) {
+    console.error("tickets.aiTranslate error:", (err as Error).message);
+    fail(res, 502, "Сервис ИИ временно недоступен", "AI_FAILED");
+  }
+};
+
+const addComment: RequestHandler = async (req, res) => {
+  try {
+    const ticket = await loadTicketWithAuth(req, res);
+    if (!ticket) return;
+    const { comment } = req.body as { comment?: string };
+    if (!isNonEmptyString(comment, 4000)) {
+      fail(res, 400, "Комментарий не может быть пустым");
+      return;
+    }
+    const entry = await TicketHistory.create({
+      ticketId: ticket._id,
+      action: "comment",
+      comment: comment.trim(),
+      performedBy: req.user!._id,
+    });
+    const populated = await TicketHistory.findById(entry._id).populate("performedBy", "name");
+    res.status(201).json({ entry: populated });
+  } catch (err) {
+    console.error("tickets.addComment error:", (err as Error).message);
+    fail(res, 500, "Не удалось добавить комментарий");
+  }
+};
+
 router.post("/:id/ai/suggest-reply", auth, aiSuggestReply);
 router.post("/:id/ai/summarize", auth, aiSummarize);
 router.get("/:id/ai/similar", auth, aiSimilar);
 router.post("/:id/ai/playbook", auth, aiPlaybook);
+router.post("/:id/ai/translate", auth, aiTranslate);
+router.post("/:id/comments", auth, addComment);
 router.post("/preview", auth, aiPreview);
 
 export default router;

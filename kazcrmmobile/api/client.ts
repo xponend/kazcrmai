@@ -195,6 +195,15 @@ export type PlaybookResult = {
 export const aiTicketPlaybook = (ticketId: string) =>
   api.post<PlaybookResult>(`/tickets/${ticketId}/ai/playbook`);
 
+export type TargetLang = "ru" | "kk" | "en";
+export type TranslationResult = { title: string; description: string; lang: TargetLang };
+
+export const aiTranslateTicket = (ticketId: string, to: TargetLang) =>
+  api.post<TranslationResult>(`/tickets/${ticketId}/ai/translate`, undefined, { params: { to } });
+
+export const addTicketComment = (ticketId: string, comment: string) =>
+  api.post(`/tickets/${ticketId}/comments`, { comment });
+
 export type AiPreviewResult = {
   classification: { category: string; confidence: number; reasoning: string };
   priority: { score: number; priority: string; sentiment: string; reasoning: string };
