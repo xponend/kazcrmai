@@ -120,6 +120,27 @@ function normalizeAuth(raw: unknown): { accessToken: string; refreshToken: strin
   return { accessToken, refreshToken, user };
 }
 
+/**
+ * Probe the server to find out which feature set we're talking to.
+ * `env` field on /api/health is only present on the post-hardening backend
+ * (added by the same commit that ships the AI endpoints), so we use that
+ * as a single capability flag.
+ */
+export async function probeServerCapabilities(): Promise<{
+  aiAvailable: boolean;
+  env: string | null;
+}> {
+  try {
+    const res = await fetch(`${API_URL}/health`);
+    if (!res.ok) return { aiAvailable: false, env: null };
+    const data = await res.json();
+    const env = typeof data.env === "string" ? data.env : null;
+    return { aiAvailable: Boolean(env), env };
+  } catch {
+    return { aiAvailable: false, env: null };
+  }
+}
+
 export const api = {
   // ─────────── auth ───────────
   async login(email: string, password: string) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Sparkles, MessageSquare, Send } from "lucide-react";
 import { api } from "../../../lib/api";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string };

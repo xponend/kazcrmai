@@ -2,11 +2,19 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { api, tokenStore, setForceLogoutHandler, type AuthUser } from "./api";
+import {
+  api,
+  tokenStore,
+  setForceLogoutHandler,
+  probeServerCapabilities,
+  type AuthUser,
+} from "./api";
 
 type AuthCtx = {
   user: AuthUser | null;
   loading: boolean;
+  /** True when the backend exposes the new AI endpoints (digest/chat/playbook/...). */
+  aiAvailable: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -18,19 +26,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [aiAvailable, setAiAvailable] = useState(false);
 
   useEffect(() => {
     setForceLogoutHandler(() => {
       setUser(null);
       router.replace("/login");
     });
+    // Probe server capabilities once per app load — independent of auth.
+    probeServerCapabilities().then((c) => setAiAvailable(c.aiAvailable));
+
     const cached = tokenStore.getUser();
     if (!cached) {
       setLoading(false);
       return;
     }
     setUser(cached);
-    api.me()
+    api
+      .me()
       .then(({ user: u }) => setUser(u))
       .catch(() => {
         tokenStore.clear();
@@ -51,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loading,
+        aiAvailable,
         login: async (email, password) => {
           const norm = await api.login(email, password);
           setUser(norm.user);

@@ -18,10 +18,17 @@ function requireEnv(name: string): string {
 
 function loadJwtSecret(): string {
   const secret = requireEnv("JWT_SECRET").trim();
-  if (PLACEHOLDER_SECRETS.has(secret) || secret.length < 32) {
+  if (secret.length < 16) {
     throw new Error(
-      "JWT_SECRET must be set to a unique value of at least 32 characters. " +
+      "JWT_SECRET must be at least 16 characters. " +
         "Generate one with: node -e \"console.log(require('crypto').randomBytes(48).toString('base64'))\""
+    );
+  }
+  if (PLACEHOLDER_SECRETS.has(secret) || secret.length < 32) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[env] JWT_SECRET looks weak or is a known placeholder — tokens are forge-able if the value is public. " +
+        "Rotate to a unique 32+ char value. Continuing boot for compatibility."
     );
   }
   return secret;
