@@ -49,13 +49,13 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="flex items-center justify-between p-4 bg-white border-b border-slate-200">
+      <div className="flex items-center justify-between p-4 bg-[#161616] border-b border-neutral-800">
         <div className="flex items-center gap-2">
-          <span className="text-violet-600">✨</span>
+          <span className="text-violet-400">✨</span>
           <span className="font-semibold">ИИ-ассистент</span>
         </div>
         {stats && (
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-neutral-400">
             {stats.total} заявок · {stats.open} откр. · {stats.critical} крит.
           </div>
         )}
@@ -63,11 +63,11 @@ export default function ChatPage() {
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages.length === 0 && (
-          <div className="max-w-md mx-auto bg-white border border-violet-200 rounded-xl p-5 mt-12">
+          <div className="max-w-md mx-auto bg-[#161616] border border-violet-500/30 rounded-xl p-5 mt-12">
             <div className="text-center mb-3">
               <div className="text-4xl mb-2">💬</div>
               <div className="font-semibold">Спросите ассистента</div>
-              <div className="text-xs text-slate-500 mt-1">
+              <div className="text-xs text-neutral-400 mt-1">
                 Я отвечаю на основе свежих данных по заявкам.
               </div>
             </div>
@@ -76,7 +76,7 @@ export default function ChatPage() {
                 <button
                   key={q}
                   onClick={() => send(q)}
-                  className="text-xs px-2.5 py-1 rounded-full border border-violet-200 text-violet-700 hover:bg-violet-50"
+                  className="text-xs px-2.5 py-1 rounded-full border border-violet-500/30 text-violet-300 hover:bg-violet-500/10"
                 >
                   {q}
                 </button>
@@ -91,7 +91,7 @@ export default function ChatPage() {
               className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-6 ${
                 m.role === "user"
                   ? "bg-violet-600 text-white rounded-br-sm"
-                  : "bg-white border border-slate-200 text-slate-800 rounded-bl-sm"
+                  : "bg-[#161616] border border-neutral-800 text-neutral-100 rounded-bl-sm"
               }`}
             >
               {m.content}
@@ -101,14 +101,14 @@ export default function ChatPage() {
 
         {sending && (
           <div className="flex justify-start">
-            <div className="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-400 text-sm italic">
+            <div className="px-4 py-2.5 rounded-2xl bg-[#161616] border border-neutral-800 text-neutral-500 text-sm italic">
               думаю…
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-3 bg-white border-t border-slate-200 flex gap-2">
+      <div className="p-3 bg-[#161616] border-t border-neutral-800 flex gap-2">
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -121,7 +121,7 @@ export default function ChatPage() {
           rows={1}
           placeholder="Спросите про заявки…"
           disabled={sending}
-          className="flex-1 px-4 py-2 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+          className="flex-1 px-4 py-2 rounded-2xl border border-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40 resize-none"
         />
         <button
           onClick={() => send()}

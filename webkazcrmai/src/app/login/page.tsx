@@ -25,51 +25,56 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-6">
+    <div className="flex-1 flex items-center justify-center p-6 bg-[#0a0a0a]">
       <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-1">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-violet-600 text-white text-xl font-bold">k</div>
-          <h1 className="text-2xl font-semibold tracking-tight">kazcrmai</h1>
-          <p className="text-sm text-slate-500">Админ-панель</p>
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-violet-600 text-white text-xl font-bold">
+            k
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-50">kazcrmai</h1>
+          <p className="text-sm text-neutral-400">Админ-панель</p>
         </div>
 
-        <form onSubmit={submit} className="space-y-3 bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <form
+          onSubmit={submit}
+          className="space-y-3 bg-[#161616] border border-neutral-800 rounded-xl p-5 shadow-xl"
+        >
           <label className="block">
-            <span className="text-xs font-medium text-slate-600">Email</span>
+            <span className="text-xs font-medium text-neutral-300">Email</span>
             <input
               type="email"
               autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full px-3 py-2 rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+              className="mt-1 w-full px-3 py-2 rounded-md border border-neutral-800 bg-neutral-900/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-slate-600">Пароль</span>
+            <span className="text-xs font-medium text-neutral-300">Пароль</span>
             <input
               type="password"
               autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full px-3 py-2 rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+              className="mt-1 w-full px-3 py-2 rounded-md border border-neutral-800 bg-neutral-900/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40"
             />
           </label>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-2.5 rounded-md bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-60"
+            className="w-full py-2.5 rounded-md bg-violet-600 text-white text-sm font-semibold hover:bg-violet-500 disabled:opacity-60"
           >
             {submitting ? "Входим…" : "Войти"}
           </button>
         </form>
 
-        <div className="text-xs text-slate-500 bg-slate-100 rounded-lg p-3 space-y-1">
-          <div className="font-semibold text-slate-700">Демо-доступы</div>
+        <div className="text-xs text-neutral-400 bg-[#161616] border border-neutral-800 rounded-lg p-3 space-y-1">
+          <div className="font-semibold text-neutral-200">Демо-доступы</div>
           <div>admin@crm.kz / admin123</div>
           <div>aliya@crm.kz / pass123 (manager)</div>
           <div>aizhan@crm.kz / pass123 (operator)</div>

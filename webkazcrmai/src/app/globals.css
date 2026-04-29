@@ -1,44 +1,69 @@
 @import "tailwindcss";
 
-/* Force light theme. This is an admin panel with explicit Tailwind colours,
-   so honoring `prefers-color-scheme: dark` would invert text inside our
-   white cards and make every input unreadable.
-
-   `color-scheme: light` also stops browsers from auto-styling form
-   controls (native selects, scrollbars, autofill) for dark mode. */
+/* Force dark theme — NextCRM-style admin look. Dark palette across the app. */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
+  --bg: #0a0a0a;
+  --bg-elevated: #111111;
+  --bg-card: #161616;
+  --border: #262626;
+  --border-subtle: #1c1c1c;
+  --text: #fafafa;
+  --text-muted: #a3a3a3;
+  --text-faint: #525252;
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
 }
 
 html,
 body {
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--bg);
+  color: var(--text);
 }
 
-/* Belt-and-braces — guarantee form fields are readable everywhere even
-   if a parent forgot to set text colour. */
+/* Form fields are readable in dark mode — explicit text colour, dark bg. */
 input,
 textarea,
 select {
-  color: #0f172a;
-  caret-color: #7c3aed;
+  color: var(--text);
+  caret-color: var(--accent);
+  background-color: transparent;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #94a3b8;
+  color: var(--text-faint);
   opacity: 1;
 }
 
-/* Chrome's yellow autofill destroys our white card look — keep autofilled
-   inputs visually identical to a freshly-typed input. */
+select option {
+  background-color: var(--bg-elevated);
+  color: var(--text);
+}
+
+/* Chrome autofill — keep our dark cards visually consistent. */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-text-fill-color: #0f172a;
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
-  caret-color: #7c3aed;
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-card) inset;
+  caret-color: var(--accent);
   transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Custom scrollbar to match the dark theme */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #404040;
 }

@@ -174,21 +174,21 @@ export default function TicketDetailPage() {
     }
   };
 
-  if (loading) return <div className="p-8 text-sm text-slate-400">Загрузка…</div>;
-  if (error || !ticket) return <div className="p-8 text-sm text-red-600">{error ?? "Заявка не найдена"}</div>;
+  if (loading) return <div className="p-8 text-sm text-neutral-500">Загрузка…</div>;
+  if (error || !ticket) return <div className="p-8 text-sm text-red-300">{error ?? "Заявка не найдена"}</div>;
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
-      <button onClick={() => router.back()} className="text-xs text-slate-500 hover:text-slate-900">
+      <button onClick={() => router.back()} className="text-xs text-neutral-400 hover:text-neutral-50">
         ← Назад
       </button>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6">
+      <div className="bg-[#161616] border border-neutral-800 rounded-xl p-6">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-100">{ticket.status}</span>
-          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">{ticket.priority}</span>
+          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-neutral-800">{ticket.status}</span>
+          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">{ticket.priority}</span>
           {(ticket.aiCategory || ticket.category) && (
-            <span className="text-[10px] text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] text-violet-300 bg-violet-500/10 px-1.5 py-0.5 rounded">
               {ticket.aiCategory ?? ticket.category}
             </span>
           )}
@@ -196,7 +196,7 @@ export default function TicketDetailPage() {
         <h1 className="text-xl font-semibold tracking-tight">{trText?.title ?? ticket.title}</h1>
 
         <div className="flex items-center justify-between gap-2 mt-4">
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-neutral-400">
             {ticket.clientId?.name ?? "—"}
             {ticket.assigneeId?.name ? ` · 👤 ${ticket.assigneeId.name}` : " · не назначен"}
           </div>
@@ -207,7 +207,7 @@ export default function TicketDetailPage() {
                 disabled={trLoading}
                 onClick={() => translate(l)}
                 className={`text-[10px] font-bold px-2 py-1 rounded border ${
-                  trLang === l ? "bg-violet-600 text-white border-violet-600" : "border-violet-200 text-violet-700"
+                  trLang === l ? "bg-violet-600 text-white border-violet-600" : "border-violet-500/30 text-violet-300"
                 }`}
               >
                 {l.toUpperCase()}
@@ -216,14 +216,14 @@ export default function TicketDetailPage() {
           </div>
         </div>
 
-        {trLoading && <div className="text-xs text-violet-600 italic mt-3">Переводим…</div>}
+        {trLoading && <div className="text-xs text-violet-400 italic mt-3">Переводим…</div>}
 
-        <p className="text-sm text-slate-700 mt-4 whitespace-pre-wrap leading-6">
+        <p className="text-sm text-neutral-200 mt-4 whitespace-pre-wrap leading-6">
           {trText?.description ?? ticket.description}
         </p>
 
         {ticket.aiReason && (
-          <div className="mt-5 text-xs text-slate-500 italic border-l-2 border-violet-200 pl-3">
+          <div className="mt-5 text-xs text-neutral-400 italic border-l-2 border-violet-500/30 pl-3">
             ✨ {ticket.aiReason}
           </div>
         )}
@@ -231,21 +231,21 @@ export default function TicketDetailPage() {
         {NEXT_STATUS[ticket.status] && (
           <button
             onClick={advance}
-            className="mt-5 w-full py-2.5 rounded-md bg-slate-900 text-white text-sm font-medium hover:bg-slate-800"
+            className="mt-5 w-full py-2.5 rounded-md bg-black text-white text-sm font-medium hover:bg-neutral-800"
           >
             {STATUS_LABEL[ticket.status]}
           </button>
         )}
 
         {isManagerOrAdmin && (
-          <div className="mt-5 pt-5 border-t border-slate-100 grid grid-cols-2 gap-3 text-xs">
+          <div className="mt-5 pt-5 border-t border-neutral-800 grid grid-cols-2 gap-3 text-xs">
             <label>
-              <span className="text-slate-500">Исполнитель</span>
+              <span className="text-neutral-400">Исполнитель</span>
               <select
                 value={String(ticket.assigneeId?._id ?? ticket.assigneeId ?? "")}
                 onChange={(e) => reassign(e.target.value)}
                 disabled={updating}
-                className="mt-1 w-full px-2 py-1.5 rounded-md border border-slate-200 text-xs bg-white"
+                className="mt-1 w-full px-2 py-1.5 rounded-md border border-neutral-800 text-xs bg-[#161616]"
               >
                 <option value="">— не назначен —</option>
                 {operators.map((o) => (
@@ -254,12 +254,12 @@ export default function TicketDetailPage() {
               </select>
             </label>
             <label>
-              <span className="text-slate-500">Приоритет</span>
+              <span className="text-neutral-400">Приоритет</span>
               <select
                 value={ticket.priority}
                 onChange={(e) => setPriority(e.target.value)}
                 disabled={updating}
-                className="mt-1 w-full px-2 py-1.5 rounded-md border border-slate-200 text-xs bg-white"
+                className="mt-1 w-full px-2 py-1.5 rounded-md border border-neutral-800 text-xs bg-[#161616]"
               >
                 <option value="low">low</option>
                 <option value="medium">medium</option>
@@ -286,7 +286,7 @@ export default function TicketDetailPage() {
               className={`p-2 rounded-lg border text-xs font-medium flex items-center justify-center gap-1 transition ${
                 tab === b.key
                   ? "bg-violet-600 text-white border-violet-600"
-                  : "bg-white border-violet-200 text-violet-700 hover:bg-violet-50"
+                  : "bg-[#161616] border-violet-500/30 text-violet-300 hover:bg-violet-500/10"
               }`}
             >
               <span>{b.icon}</span> {b.label}
@@ -295,16 +295,16 @@ export default function TicketDetailPage() {
         </div>
 
         {tab && (
-          <div className="mt-3 bg-white border border-slate-200 rounded-xl p-5 text-sm">
-            {aiLoading && <div className="text-violet-600 italic">Генерируется…</div>}
-            {aiError && <div className="text-red-600">{aiError}</div>}
+          <div className="mt-3 bg-[#161616] border border-neutral-800 rounded-xl p-5 text-sm">
+            {aiLoading && <div className="text-violet-400 italic">Генерируется…</div>}
+            {aiError && <div className="text-red-300">{aiError}</div>}
 
             {!aiLoading && !aiError && tab === "reply" && replies && (
               <div className="space-y-3">
                 {replies.map((r, i) => (
-                  <div key={i} className="border-b border-slate-100 last:border-0 pb-3 last:pb-0">
-                    <div className="text-[10px] font-bold uppercase text-violet-700 mb-1.5">{r.tone}</div>
-                    <div className="text-slate-700 leading-6">{r.body}</div>
+                  <div key={i} className="border-b border-neutral-800 last:border-0 pb-3 last:pb-0">
+                    <div className="text-[10px] font-bold uppercase text-violet-300 mb-1.5">{r.tone}</div>
+                    <div className="text-neutral-200 leading-6">{r.body}</div>
                   </div>
                 ))}
               </div>
@@ -313,7 +313,7 @@ export default function TicketDetailPage() {
             {!aiLoading && !aiError && tab === "summary" && summary && (
               <div>
                 <div className="font-semibold mb-2">{summary.summary}</div>
-                <ul className="space-y-1 text-slate-600">
+                <ul className="space-y-1 text-neutral-300">
                   {summary.keyPoints.map((p, i) => <li key={i}>• {p}</li>)}
                 </ul>
               </div>
@@ -321,13 +321,13 @@ export default function TicketDetailPage() {
 
             {!aiLoading && !aiError && tab === "similar" && similar && (
               similar.length === 0 ? (
-                <div className="text-slate-400 italic">Похожих заявок не найдено</div>
+                <div className="text-neutral-500 italic">Похожих заявок не найдено</div>
               ) : (
                 <ul className="space-y-2">
                   {similar.map((t) => (
-                    <li key={t._id} className="border-b border-slate-100 last:border-0 pb-2 last:pb-0">
-                      <div className="font-medium text-slate-700">{t.title}</div>
-                      <div className="text-xs text-slate-500">[{t.aiCategory ?? t.category ?? "—"}] · {t.status}</div>
+                    <li key={t._id} className="border-b border-neutral-800 last:border-0 pb-2 last:pb-0">
+                      <div className="font-medium text-neutral-200">{t.title}</div>
+                      <div className="text-xs text-neutral-400">[{t.aiCategory ?? t.category ?? "—"}] · {t.status}</div>
                     </li>
                   ))}
                 </ul>
@@ -337,26 +337,26 @@ export default function TicketDetailPage() {
             {!aiLoading && !aiError && tab === "playbook" && playbook && (
               <div className="space-y-3">
                 {playbook.estimatedMinutes > 0 && (
-                  <div className="text-xs font-semibold text-violet-700">
+                  <div className="text-xs font-semibold text-violet-300">
                     ≈ {playbook.estimatedMinutes} мин · {playbook.similarCount} похожих в истории
                   </div>
                 )}
                 {playbook.steps.map((s: any) => (
-                  <div key={s.index} className="flex gap-3 border-b border-slate-100 last:border-0 pb-3 last:pb-0">
+                  <div key={s.index} className="flex gap-3 border-b border-neutral-800 last:border-0 pb-3 last:pb-0">
                     <div className="w-6 h-6 rounded-full bg-violet-600 text-white text-xs font-bold grid place-items-center shrink-0">
                       {s.index}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold">{s.action}</div>
-                      <div className="text-slate-600 text-sm">{s.detail}</div>
+                      <div className="text-neutral-300 text-sm">{s.detail}</div>
                     </div>
                   </div>
                 ))}
                 {playbook.escalateIf?.length > 0 && (
-                  <div className="bg-amber-50 rounded-lg p-3">
-                    <div className="text-[10px] font-bold uppercase text-amber-800 mb-1">Эскалировать, если</div>
+                  <div className="bg-amber-500/10 rounded-lg p-3">
+                    <div className="text-[10px] font-bold uppercase text-amber-300 mb-1">Эскалировать, если</div>
                     {playbook.escalateIf.map((e: string, i: number) => (
-                      <div key={i} className="text-xs text-amber-900">⚠ {e}</div>
+                      <div key={i} className="text-xs text-amber-200">⚠ {e}</div>
                     ))}
                   </div>
                 )}
@@ -367,16 +367,16 @@ export default function TicketDetailPage() {
       </div>
 
       {/* Timeline */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6">
+      <div className="bg-[#161616] border border-neutral-800 rounded-xl p-6">
         <div className="text-sm font-semibold mb-4">История</div>
         <div className="space-y-4">
           {history.map((h, i) => (
             <div key={h._id || i} className="flex gap-3">
               <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${
-                h.action === "comment" ? "bg-emerald-500" : "bg-violet-600"
+                h.action === "comment" ? "bg-emerald-500/100" : "bg-violet-600"
               }`} />
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-semibold text-slate-800">
+                <div className="text-xs font-semibold text-neutral-100">
                   {h.action === "created" && "Заявка создана"}
                   {h.action === "status_changed" && `Статус: ${h.oldValue} → ${h.newValue}`}
                   {h.action === "assigned" && "Назначен исполнитель"}
@@ -384,8 +384,8 @@ export default function TicketDetailPage() {
                   {h.action === "priority_changed" && `Приоритет: ${h.oldValue} → ${h.newValue}`}
                   {h.action === "comment" && "Комментарий"}
                 </div>
-                {h.comment && <div className="text-sm text-slate-700 mt-0.5 leading-5">{h.comment}</div>}
-                <div className="text-[10px] text-slate-400 mt-0.5">
+                {h.comment && <div className="text-sm text-neutral-200 mt-0.5 leading-5">{h.comment}</div>}
+                <div className="text-[10px] text-neutral-500 mt-0.5">
                   {new Date(h.createdAt).toLocaleString("ru-RU")}
                   {h.performedBy?.name ? ` · ${h.performedBy.name}` : ""}
                 </div>
@@ -394,14 +394,14 @@ export default function TicketDetailPage() {
           ))}
         </div>
 
-        <div className="flex gap-2 mt-5 pt-4 border-t border-slate-100">
+        <div className="flex gap-2 mt-5 pt-4 border-t border-neutral-800">
           <textarea
             value={commentDraft}
             onChange={(e) => setCommentDraft(e.target.value)}
             placeholder="Добавить комментарий…"
             disabled={commentSending}
             rows={2}
-            className="flex-1 px-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+            className="flex-1 px-3 py-2 rounded-md border border-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40 resize-none"
           />
           <button
             onClick={submitComment}

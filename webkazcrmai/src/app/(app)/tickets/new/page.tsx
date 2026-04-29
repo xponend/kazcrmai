@@ -58,13 +58,13 @@ export default function NewTicketPage() {
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-semibold tracking-tight mb-6">Новая заявка</h1>
-      <form onSubmit={submit} className="space-y-4 bg-white border border-slate-200 rounded-xl p-6">
+      <form onSubmit={submit} className="space-y-4 bg-[#161616] border border-neutral-800 rounded-xl p-6">
         <label className="block">
-          <span className="text-xs font-medium text-slate-600">Клиент</span>
+          <span className="text-xs font-medium text-neutral-300">Клиент</span>
           <select
             value={clientId}
             onChange={(e) => setClientId(e.target.value)}
-            className="mt-1 w-full px-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="mt-1 w-full px-3 py-2 rounded-md border border-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40"
             required
           >
             {clients.map((c) => (
@@ -74,51 +74,51 @@ export default function NewTicketPage() {
         </label>
 
         <label className="block">
-          <span className="text-xs font-medium text-slate-600">Тема</span>
+          <span className="text-xs font-medium text-neutral-300">Тема</span>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="mt-1 w-full px-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="mt-1 w-full px-3 py-2 rounded-md border border-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40"
           />
         </label>
 
         <label className="block">
-          <span className="text-xs font-medium text-slate-600">Описание</span>
+          <span className="text-xs font-medium text-neutral-300">Описание</span>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
             rows={6}
-            className="mt-1 w-full px-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="mt-1 w-full px-3 py-2 rounded-md border border-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40"
           />
         </label>
 
         {(previewing || preview) && !previewUnavailable && (
-          <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm">
-            <div className="text-[10px] font-bold uppercase text-violet-700 mb-1">
+          <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 p-3 text-sm">
+            <div className="text-[10px] font-bold uppercase text-violet-300 mb-1">
               ✨ ИИ предсказывает {previewing && <span className="italic font-normal">— анализирует…</span>}
             </div>
             {preview && (
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-slate-500">Категория:</span>{" "}
+                  <span className="text-neutral-400">Категория:</span>{" "}
                   <span className="font-semibold">{preview.classification.category}</span>{" "}
-                  <span className="text-slate-400">({Math.round(preview.classification.confidence * 100)}%)</span>
+                  <span className="text-neutral-500">({Math.round(preview.classification.confidence * 100)}%)</span>
                 </div>
                 <div>
-                  <span className="text-slate-500">Приоритет:</span>{" "}
-                  <span className={`font-semibold ${preview.priority.priority === "critical" ? "text-red-600" : preview.priority.priority === "high" ? "text-amber-600" : "text-slate-700"}`}>
+                  <span className="text-neutral-400">Приоритет:</span>{" "}
+                  <span className={`font-semibold ${preview.priority.priority === "critical" ? "text-red-300" : preview.priority.priority === "high" ? "text-amber-600" : "text-neutral-200"}`}>
                     {preview.priority.priority}
                   </span>{" "}
-                  <span className="text-slate-400">({preview.priority.score}/100)</span>
+                  <span className="text-neutral-500">({preview.priority.score}/100)</span>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {error && <div className="text-sm text-red-600">{error}</div>}
+        {error && <div className="text-sm text-red-300">{error}</div>}
 
         <button
           type="submit"
