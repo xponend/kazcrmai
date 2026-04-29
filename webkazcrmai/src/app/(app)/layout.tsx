@@ -189,15 +189,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         <div className="border-t border-neutral-800 p-3">
           <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5"}`}>
-            <div className="w-8 h-8 rounded-full bg-neutral-700 text-neutral-200 grid place-items-center text-xs font-bold shrink-0">
-              {initials}
-            </div>
-            {!collapsed && (
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-medium text-neutral-100 truncate">{user.name}</div>
-                <div className="text-[10px] text-neutral-500 truncate">{user.email}</div>
+            <Link
+              href="/profile"
+              title="Профиль"
+              className={`flex items-center ${collapsed ? "" : "gap-2.5 flex-1 min-w-0 hover:bg-neutral-800 rounded-md p-1 -m-1 transition-colors"}`}
+            >
+              <div className="w-8 h-8 rounded-full bg-neutral-700 text-neutral-200 grid place-items-center text-xs font-bold shrink-0">
+                {initials}
               </div>
-            )}
+              {!collapsed && (
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-medium text-neutral-100 truncate">{user.name}</div>
+                  <div className="text-[10px] text-neutral-500 truncate">{user.email}</div>
+                </div>
+              )}
+            </Link>
             {!collapsed && (
               <button
                 onClick={logout}
