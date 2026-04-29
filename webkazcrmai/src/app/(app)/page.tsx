@@ -140,9 +140,17 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 md:p-8 space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-neutral-50">{greeting}, {user?.name?.split(" ")[0] ?? "—"}</h1>
-        <p className="text-sm text-neutral-400 mt-1">Welcome to kazcrmai cockpit, here you can see your company overview</p>
+      <header className="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral-50">{greeting}, {user?.name?.split(" ")[0] ?? "—"}</h1>
+          <p className="text-sm text-neutral-400 mt-1">Welcome to kazcrmai cockpit, here you can see your company overview</p>
+        </div>
+        <div className="flex items-center gap-2 text-[11px]">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${aiAvailable ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" : "bg-amber-500/15 text-amber-300 border border-amerald-500/30"}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${aiAvailable ? "bg-emerald-400" : "bg-amber-400"}`} />
+            {aiAvailable ? "AI online" : "AI pending deploy"}
+          </span>
+        </div>
       </header>
 
       {loading && <div className="text-sm text-neutral-500">Загрузка…</div>}
