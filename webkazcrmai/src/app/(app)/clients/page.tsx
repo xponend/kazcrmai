@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "../../../lib/api";
 
 export default function ClientsPage() {
@@ -58,11 +59,11 @@ export default function ClientsPage() {
           <div className="p-6 text-sm text-slate-400 text-center">Не найдено</div>
         ) : (
           clients.map((c) => (
-            <div key={c._id} className="p-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
+            <div key={c._id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 transition">
+              <Link href={`/clients/${c._id}`} className="min-w-0 flex-1">
                 <div className="font-medium text-slate-800">{c.name}</div>
                 <div className="text-xs text-slate-500">{c.company ?? "—"} · {c.totalTickets ?? 0} обращений</div>
-              </div>
+              </Link>
               <button
                 onClick={() => openProfile(c._id)}
                 className="text-xs px-2.5 py-1 rounded-md border border-violet-200 text-violet-700 hover:bg-violet-50 whitespace-nowrap"

@@ -192,6 +192,7 @@ export const api = {
     const q = search ? `?search=${encodeURIComponent(search)}` : "";
     return request<{ clients: any[] }>(`/clients${q}`);
   },
+  getClient: (id: string) => request<{ client: any }>(`/clients/${id}`),
   aiClientProfile: (id: string) =>
     request<{ profile: any; sampleSize: number }>(`/clients/${id}/ai/profile`, { method: "POST" }),
   listOperators: () => request<{ operators: any[] }>("/users/operators"),
