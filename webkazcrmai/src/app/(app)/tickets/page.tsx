@@ -91,12 +91,20 @@ export default function TicketsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Заявки</h1>
           <div className="text-xs text-neutral-400 mt-0.5">{total} всего · стр. {page}/{pages}</div>
         </div>
-        <Link
-          href="/tickets/new"
-          className="px-3 py-2 rounded-md bg-violet-600 text-white text-sm font-medium hover:bg-violet-700"
-        >
-          + Новая заявка
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/tickets/board"
+            className="px-3 py-2 rounded-md border border-neutral-800 hover:bg-neutral-800 text-neutral-300 text-sm font-medium"
+          >
+            Kanban
+          </Link>
+          <Link
+            href="/tickets/new"
+            className="px-3 py-2 rounded-md bg-violet-600 text-white text-sm font-medium hover:bg-violet-500"
+          >
+            + Новая заявка
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-2 mb-4">

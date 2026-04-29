@@ -19,6 +19,7 @@ import {
   PanelLeft,
   ChevronDown,
   LogOut,
+  Kanban,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "../../lib/auth";
@@ -33,6 +34,7 @@ const SECTIONS: NavSection[] = [
     defaultOpen: true,
     items: [
       { href: "/tickets", label: "Все заявки", icon: Ticket },
+      { href: "/tickets/board", label: "Kanban-доска", icon: Kanban },
       { href: "/tickets/new", label: "Новая заявка", icon: PlusCircle },
     ],
   },
