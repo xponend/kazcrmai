@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
+/* Force light theme. This is an admin panel with explicit Tailwind colours,
+   so honoring `prefers-color-scheme: dark` would invert text inside our
+   white cards and make every input unreadable.
+
+   `color-scheme: light` also stops browsers from auto-styling form
+   controls (native selects, scrollbars, autofill) for dark mode. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* Belt-and-braces — guarantee form fields are readable everywhere even
+   if a parent forgot to set text colour. */
+input,
+textarea,
+select {
+  color: #0f172a;
+  caret-color: #7c3aed;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+/* Chrome's yellow autofill destroys our white card look — keep autofilled
+   inputs visually identical to a freshly-typed input. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #0f172a;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  caret-color: #7c3aed;
+  transition: background-color 9999s ease-in-out 0s;
 }
