@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Sparkles,
+  MessageSquare,
+  FileText,
+  Repeat,
+  ListChecks,
+  Send,
+  AlertTriangle,
+} from "lucide-react";
 import { api } from "../../../../lib/api";
 import { useAuth } from "../../../../lib/auth";
 
@@ -179,8 +190,8 @@ export default function TicketDetailPage() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
-      <button onClick={() => router.back()} className="text-xs text-neutral-400 hover:text-neutral-50">
-        ← Назад
+      <button onClick={() => router.back()} className="text-xs text-neutral-400 hover:text-neutral-50 inline-flex items-center gap-1">
+        <ArrowLeft size={12} strokeWidth={2} /> Назад
       </button>
 
       <div className="bg-[#161616] border border-neutral-800 rounded-xl p-6">
@@ -198,7 +209,7 @@ export default function TicketDetailPage() {
         <div className="flex items-center justify-between gap-2 mt-4">
           <div className="text-xs text-neutral-400">
             {ticket.clientId?.name ?? "—"}
-            {ticket.assigneeId?.name ? ` · 👤 ${ticket.assigneeId.name}` : " · не назначен"}
+            {ticket.assigneeId?.name ? ` · ${ticket.assigneeId.name}` : " · не назначен"}
           </div>
           <div className="flex gap-1">
             {(["ru", "kk", "en"] as const).map((l) => (
@@ -224,7 +235,7 @@ export default function TicketDetailPage() {
 
         {ticket.aiReason && (
           <div className="mt-5 text-xs text-neutral-400 italic border-l-2 border-violet-500/30 pl-3">
-            ✨ {ticket.aiReason}
+            <span className="inline-flex items-center gap-1.5"><Sparkles size={11} strokeWidth={1.75} /> {ticket.aiReason}</span>
           </div>
         )}
 
@@ -275,23 +286,27 @@ export default function TicketDetailPage() {
       <div>
         <div className="grid grid-cols-4 gap-2">
           {[
-            { key: "reply", label: "Ответ", icon: "💬" },
-            { key: "summary", label: "Саммари", icon: "📝" },
-            { key: "similar", label: "Похожие", icon: "🔁" },
-            { key: "playbook", label: "План", icon: "📋" },
-          ].map((b) => (
-            <button
-              key={b.key}
-              onClick={() => openTab(b.key as AssistTab)}
-              className={`p-2 rounded-lg border text-xs font-medium flex items-center justify-center gap-1 transition ${
-                tab === b.key
-                  ? "bg-violet-600 text-white border-violet-600"
-                  : "bg-[#161616] border-violet-500/30 text-violet-300 hover:bg-violet-500/10"
-              }`}
-            >
-              <span>{b.icon}</span> {b.label}
-            </button>
-          ))}
+            { key: "reply" as const, label: "Ответ", Icon: MessageSquare },
+            { key: "summary" as const, label: "Саммари", Icon: FileText },
+            { key: "similar" as const, label: "Похожие", Icon: Repeat },
+            { key: "playbook" as const, label: "План", Icon: ListChecks },
+          ].map((b) => {
+            const Icon = b.Icon;
+            return (
+              <button
+                key={b.key}
+                onClick={() => openTab(b.key)}
+                className={`p-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition ${
+                  tab === b.key
+                    ? "bg-violet-600 text-white border-violet-600"
+                    : "bg-[#161616] border-violet-500/30 text-violet-300 hover:bg-violet-500/10"
+                }`}
+              >
+                <Icon size={14} strokeWidth={1.75} />
+                {b.label}
+              </button>
+            );
+          })}
         </div>
 
         {tab && (
@@ -356,7 +371,7 @@ export default function TicketDetailPage() {
                   <div className="bg-amber-500/10 rounded-lg p-3">
                     <div className="text-[10px] font-bold uppercase text-amber-300 mb-1">Эскалировать, если</div>
                     {playbook.escalateIf.map((e: string, i: number) => (
-                      <div key={i} className="text-xs text-amber-200">⚠ {e}</div>
+                      <div key={i} className="text-xs text-amber-200 inline-flex items-start gap-1.5"><AlertTriangle size={11} strokeWidth={2} className="mt-0.5 shrink-0" /> <span>{e}</span></div>
                     ))}
                   </div>
                 )}
@@ -406,8 +421,9 @@ export default function TicketDetailPage() {
           <button
             onClick={submitComment}
             disabled={!commentDraft.trim() || commentSending}
-            className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 self-start"
+            className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 self-start inline-flex items-center gap-1.5"
           >
+            <Send size={13} strokeWidth={2} />
             {commentSending ? "…" : "Отправить"}
           </button>
         </div>

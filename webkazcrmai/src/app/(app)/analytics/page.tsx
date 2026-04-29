@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { api } from "../../../lib/api";
 
 const WINDOWS = [
@@ -51,7 +52,7 @@ export default function AnalyticsPage() {
         <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-violet-400">✨</span>
+              <Sparkles size={14} strokeWidth={1.75} className="text-violet-400" />
               <span className="font-semibold text-violet-200">ИИ-дайджест</span>
             </div>
             <div className="flex gap-1">
@@ -91,7 +92,7 @@ export default function AnalyticsPage() {
                 <div>
                   <div className="text-[10px] font-bold uppercase text-violet-300 mb-1">Рекомендации</div>
                   <ul className="text-sm text-emerald-300 space-y-1">
-                    {digest.recommendations.map((s: string, i: number) => <li key={i}>→ {s}</li>)}
+                    {digest.recommendations.map((s: string, i: number) => <li key={i}>{s}</li>)}
                   </ul>
                 </div>
               )}

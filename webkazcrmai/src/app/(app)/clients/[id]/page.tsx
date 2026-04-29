@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "../../../../lib/api";
@@ -73,7 +74,7 @@ export default function ClientDetailPage() {
       <div className="bg-[#161616] border border-violet-500/30 rounded-xl p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-violet-400">✨</span>
+            <Sparkles size={14} strokeWidth={1.75} className="text-violet-400" />
             <span className="font-semibold text-violet-200">ИИ-портрет клиента</span>
           </div>
           {!profile && !profileLoading && (

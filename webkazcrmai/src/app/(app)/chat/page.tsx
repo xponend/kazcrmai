@@ -66,7 +66,9 @@ export default function ChatPage() {
         {messages.length === 0 && (
           <div className="max-w-md mx-auto bg-[#161616] border border-violet-500/30 rounded-xl p-5 mt-12">
             <div className="text-center mb-3">
-              <div className="text-4xl mb-2">💬</div>
+              <div className="grid place-items-center mb-2">
+                <MessageSquare size={32} strokeWidth={1.5} className="text-violet-400" />
+              </div>
               <div className="font-semibold">Спросите ассистента</div>
               <div className="text-xs text-neutral-400 mt-1">
                 Я отвечаю на основе свежих данных по заявкам.
@@ -127,9 +129,9 @@ export default function ChatPage() {
         <button
           onClick={() => send()}
           disabled={!draft.trim() || sending}
-          className="w-10 h-10 rounded-full bg-violet-600 text-white grid place-items-center disabled:opacity-50"
+          className="w-10 h-10 rounded-full bg-violet-600 text-white grid place-items-center disabled:opacity-50 hover:bg-violet-500"
         >
-          ↑
+          <Send size={15} strokeWidth={2} />
         </button>
       </div>
     </div>

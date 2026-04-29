@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../../lib/api";
 
@@ -97,7 +98,7 @@ export default function NewTicketPage() {
         {(previewing || preview) && !previewUnavailable && (
           <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 p-3 text-sm">
             <div className="text-[10px] font-bold uppercase text-violet-300 mb-1">
-              ✨ ИИ предсказывает {previewing && <span className="italic font-normal">— анализирует…</span>}
+              <Sparkles size={11} strokeWidth={1.75} className="inline-block mr-1" />ИИ предсказывает {previewing && <span className="italic font-normal">— анализирует…</span>}
             </div>
             {preview && (
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -125,7 +126,7 @@ export default function NewTicketPage() {
           disabled={submitting}
           className="w-full py-2.5 rounded-md bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-60"
         >
-          {submitting ? "Создаём и запускаем ИИ-анализ…" : "✨ Создать заявку"}
+          {submitting ? "Создаём и запускаем ИИ-анализ…" : (<><Sparkles size={14} strokeWidth={1.75} /> Создать заявку</>)}
         </button>
       </form>
     </div>

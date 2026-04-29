@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { api } from "../../../lib/api";
 
@@ -68,7 +69,7 @@ export default function ClientsPage() {
                 onClick={() => openProfile(c._id)}
                 className="text-xs px-2.5 py-1 rounded-md border border-violet-500/30 text-violet-300 hover:bg-violet-500/10 whitespace-nowrap"
               >
-                ✨ ИИ-профиль
+                ИИ-профиль
               </button>
             </div>
           ))
