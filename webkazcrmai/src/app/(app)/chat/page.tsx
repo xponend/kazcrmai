@@ -52,7 +52,7 @@ export default function ChatPage() {
     <div className="flex flex-col h-screen">
       <div className="flex items-center justify-between p-4 bg-[#161616] border-b border-neutral-800">
         <div className="flex items-center gap-2">
-          <span className="text-violet-400">✨</span>
+          <Sparkles size={16} strokeWidth={1.75} className="text-violet-400" />
           <span className="font-semibold">ИИ-ассистент</span>
         </div>
         {stats && (
