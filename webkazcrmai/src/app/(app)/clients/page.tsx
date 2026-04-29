@@ -44,7 +44,15 @@ export default function ClientsPage() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Клиенты</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Клиенты</h1>
+        <Link
+          href="/clients/new"
+          className="px-3 py-2 rounded-md bg-violet-600 text-white text-sm font-medium hover:bg-violet-500"
+        >
+          + Новый клиент
+        </Link>
+      </div>
 
       <input
         value={search}

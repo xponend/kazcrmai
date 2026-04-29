@@ -41,7 +41,10 @@ const SECTIONS: NavSection[] = [
   {
     label: "Клиенты",
     icon: Users,
-    items: [{ href: "/clients", label: "Все клиенты", icon: Building2 }],
+    items: [
+      { href: "/clients", label: "Все клиенты", icon: Building2 },
+      { href: "/clients/new", label: "Новый клиент", icon: PlusCircle },
+    ],
   },
   {
     label: "Аналитика",
