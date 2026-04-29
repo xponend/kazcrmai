@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "../../../../lib/api";
+import { useAuth } from "../../../../lib/auth";
 
 const NEXT_STATUS: Record<string, string> = {
   new: "in_progress",
@@ -20,10 +21,14 @@ type AssistTab = "reply" | "summary" | "similar" | "playbook" | null;
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
+  const isManagerOrAdmin = user?.role === "admin" || user?.role === "manager";
   const [ticket, setTicket] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [operators, setOperators] = useState<Array<{ _id: string; name: string }>>([]);
+  const [updating, setUpdating] = useState(false);
 
   // AI panels
   const [tab, setTab] = useState<AssistTab>(null);
@@ -61,6 +66,38 @@ export default function TicketDetailPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (!isManagerOrAdmin) return;
+    api.listOperators().then((d) => setOperators(d.operators)).catch(() => {});
+  }, [isManagerOrAdmin]);
+
+  const reassign = async (assigneeId: string) => {
+    if (!ticket || updating) return;
+    if (assigneeId === String(ticket.assigneeId?._id ?? ticket.assigneeId ?? "")) return;
+    setUpdating(true);
+    try {
+      await api.updateTicket(id, { assigneeId });
+      await load();
+    } catch (err) {
+      alert((err as { message?: string }).message ?? "Не удалось переназначить");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const setPriority = async (priority: string) => {
+    if (!ticket || updating || priority === ticket.priority) return;
+    setUpdating(true);
+    try {
+      await api.updateTicket(id, { priority });
+      await load();
+    } catch (err) {
+      alert((err as { message?: string }).message ?? "Не удалось изменить приоритет");
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const advance = async () => {
     if (!ticket) return;
@@ -198,6 +235,39 @@ export default function TicketDetailPage() {
           >
             {STATUS_LABEL[ticket.status]}
           </button>
+        )}
+
+        {isManagerOrAdmin && (
+          <div className="mt-5 pt-5 border-t border-slate-100 grid grid-cols-2 gap-3 text-xs">
+            <label>
+              <span className="text-slate-500">Исполнитель</span>
+              <select
+                value={String(ticket.assigneeId?._id ?? ticket.assigneeId ?? "")}
+                onChange={(e) => reassign(e.target.value)}
+                disabled={updating}
+                className="mt-1 w-full px-2 py-1.5 rounded-md border border-slate-200 text-xs bg-white"
+              >
+                <option value="">— не назначен —</option>
+                {operators.map((o) => (
+                  <option key={o._id} value={o._id}>{o.name}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="text-slate-500">Приоритет</span>
+              <select
+                value={ticket.priority}
+                onChange={(e) => setPriority(e.target.value)}
+                disabled={updating}
+                className="mt-1 w-full px-2 py-1.5 rounded-md border border-slate-200 text-xs bg-white"
+              >
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+                <option value="critical">critical</option>
+              </select>
+            </label>
+          </div>
         )}
       </div>
 
