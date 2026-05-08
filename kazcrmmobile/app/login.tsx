@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useStore } from "../store/useStore";
 
@@ -24,7 +24,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.header}>
-        <Ionicons name="cube" size={48} color="#1e40af" />
+        <Image source={require("../assets/icon.png")} style={styles.logo} />
         <Text style={styles.title}>CRM AI</Text>
         <Text style={styles.subtitle}>Интеллектуальная система управления заявками</Text>
       </View>
@@ -52,6 +52,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8fafc", justifyContent: "center", padding: 24 },
   header: { alignItems: "center", marginBottom: 40 },
+  logo: { width: 72, height: 72, borderRadius: 16 },
   title: { fontSize: 32, fontWeight: "800", color: "#1e40af", marginTop: 12 },
   subtitle: { fontSize: 14, color: "#6b7280", marginTop: 6, textAlign: "center" },
   form: { gap: 14 },

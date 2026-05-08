@@ -27,10 +27,19 @@ export default function LoginPage() {
   return (
     <div className="flex-1 flex items-center justify-center p-6 bg-[#0a0a0a]">
       <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-violet-600 text-white text-xl font-bold">
-            k
-          </div>
+        <div className="text-center space-y-3 flex flex-col items-center">
+          <svg width="56" height="56" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="7.2" fill="#F1ECE0" />
+            <g stroke="#1A1816" strokeWidth="3.4" strokeLinecap="round" fill="none">
+              <line x1="10.5" y1="7.5" x2="10.5" y2="24.5" />
+              <line x1="10.7" y1="16" x2="22" y2="8" />
+              <line x1="10.7" y1="16" x2="22" y2="24" />
+            </g>
+            <path
+              d="M24.6 7.4 L25.3 9.1 L27 9.8 L25.3 10.5 L24.6 12.2 L23.9 10.5 L22.2 9.8 L23.9 9.1 Z"
+              fill="#D97757"
+            />
+          </svg>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-50">kazcrmai</h1>
           <p className="text-sm text-neutral-400">Админ-панель</p>
         </div>

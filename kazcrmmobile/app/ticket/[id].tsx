@@ -10,6 +10,7 @@ import {
   type TargetLang,
 } from "../../api/client";
 import { AiAnalysis, AiAssist, PriorityBadge, StatusBadge } from "../../components/CrmComponents";
+import { statusLabel, priorityLabel } from "../../lib/i18n";
 
 const NEXT_STATUS: Record<string, string> = {
   new: "in_progress",
@@ -167,10 +168,10 @@ export default function TicketDetailScreen() {
             <View style={styles.historyContent}>
               <Text style={styles.historyAction}>
                 {h.action === "created" && "Заявка создана"}
-                {h.action === "status_changed" && `Статус: ${h.oldValue} → ${h.newValue}`}
+                {h.action === "status_changed" && `Статус: ${statusLabel(h.oldValue)} → ${statusLabel(h.newValue)}`}
                 {h.action === "assigned" && "Назначен исполнитель"}
                 {h.action === "ai_processed" && "ИИ-анализ выполнен"}
-                {h.action === "priority_changed" && `Приоритет: ${h.oldValue} → ${h.newValue}`}
+                {h.action === "priority_changed" && `Приоритет: ${priorityLabel(h.oldValue)} → ${priorityLabel(h.newValue)}`}
                 {h.action === "comment" && "Комментарий оператора"}
               </Text>
               {h.comment && <Text style={styles.historyComment}>{h.comment}</Text>}

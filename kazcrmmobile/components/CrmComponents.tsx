@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { categoryLabel, statusLabel } from "../lib/i18n";
 
 // Priority colors
 const PRIORITY_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
@@ -65,7 +66,7 @@ export function TicketCard({ ticket, onPress }: TicketCardProps) {
       {ticket.aiCategory && (
         <View style={styles.aiTag}>
           <Ionicons name="sparkles" size={12} color="#7c3aed" />
-          <Text style={styles.aiTagText}>ИИ: {ticket.aiCategory}</Text>
+          <Text style={styles.aiTagText}>ИИ: {categoryLabel(ticket.aiCategory)}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -102,7 +103,7 @@ export function AiAnalysis({ ticket, aiResult }: AiAnalysisProps) {
       <View style={styles.aiRow}>
         <Text style={styles.aiLabel}>Категория</Text>
         <View style={styles.aiValue}>
-          <Text style={styles.aiValueText}>{data.classification?.category || ticket.aiCategory}</Text>
+          <Text style={styles.aiValueText}>{categoryLabel(data.classification?.category || ticket.aiCategory)}</Text>
           {(data.classification?.confidence || ticket.aiConfidence) && (
             <Text style={styles.aiConfidence}>
               {Math.round((data.classification?.confidence || ticket.aiConfidence) * 100)}%
@@ -275,7 +276,7 @@ export function AiAssist({ ticketId }: { ticketId: string }) {
                   <View key={t._id} style={styles.assistSimilar}>
                     <Text style={styles.assistSimilarTitle}>{t.title}</Text>
                     <Text style={styles.assistSimilarMeta}>
-                      [{t.aiCategory ?? t.category ?? "—"}] · {t.status}
+                      [{categoryLabel(t.aiCategory ?? t.category)}] · {statusLabel(t.status)}
                     </Text>
                   </View>
                 ))

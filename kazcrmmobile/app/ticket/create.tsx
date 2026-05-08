@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { createTicket, getClients, aiPreviewTicket, type AiPreviewResult } from "../../api/client";
 import { AiAnalysis } from "../../components/CrmComponents";
+import { categoryLabel, priorityLabel } from "../../lib/i18n";
 
 type AiStep = { label: string; done: boolean; result?: string };
 
@@ -166,7 +167,7 @@ export default function CreateTicketScreen() {
                 <View style={styles.previewRow}>
                   <Text style={styles.previewLabel}>Категория</Text>
                   <Text style={styles.previewValue}>
-                    {preview.classification.category}{" "}
+                    {categoryLabel(preview.classification.category)}{" "}
                     <Text style={styles.previewMuted}>
                       {Math.round(preview.classification.confidence * 100)}%
                     </Text>
@@ -183,7 +184,7 @@ export default function CreateTicketScreen() {
                       preview.priority.priority === "high" && { color: "#f59e0b" },
                     ]}
                   >
-                    {preview.priority.priority}{" "}
+                    {priorityLabel(preview.priority.priority)}{" "}
                     <Text style={styles.previewMuted}>{preview.priority.score}/100</Text>
                   </Text>
                 </View>

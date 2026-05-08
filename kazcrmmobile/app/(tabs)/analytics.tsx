@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { PieChart, BarChart } from "react-native-chart-kit";
 import { getAnalytics, aiDigest, type DigestResponse } from "../../api/client";
+import { categoryLabel } from "../../lib/i18n";
 
 const screenWidth = Dimensions.get("window").width - 48;
 const COLORS = ["#3b82f6", "#ef4444", "#f59e0b", "#22c55e", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
@@ -70,7 +71,7 @@ export default function AnalyticsScreen() {
   if (!data) return <View style={styles.container}><Text style={{ textAlign: "center", marginTop: 40, color: "#9ca3af" }}>Загрузка...</Text></View>;
 
   const pieData = (data.byCategory || []).map((c: any, i: number) => ({
-    name: c._id || "Другое",
+    name: c._id ? categoryLabel(c._id) : "Другое",
     count: c.count,
     color: COLORS[i % COLORS.length],
     legendFontColor: "#6b7280",
