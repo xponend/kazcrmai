@@ -1,70 +1,84 @@
 # kazcrmai
 
-Diploma project — open-source mobile-first CRM with AI agents (Satbayev University 2026).
+Дипломный проект — open-source мобильный CRM с AI-агентами (Сатпаев Университет, 2026).
 
-## Live demo
+## Живое демо
 
-- Backend: https://kazcrm.onrender.com (Render free, region: singapore, auto-deploys on push)
-- Health: https://kazcrm.onrender.com/api/health
-- Demo login: `admin@crm.kz` / `admin123` · `aizhan@crm.kz` / `pass123`
-- Mobile: Expo project `@sultandelux/kazcrmmobile`, EAS Update endpoint `https://u.expo.dev/db280bc1-ad39-4958-8ec1-cb8096a316da`, preview channel pinned to the live backend
+- Backend: https://kazcrm.onrender.com (Render free, регион: singapore, авто-деплой при push)
+- Health-check: https://kazcrm.onrender.com/api/health
+- Web-админка: https://webkazcrmai.vercel.app
+- Демо-логины: `admin@crm.kz` / `admin123` · `aizhan@crm.kz` / `pass123`
+- Mobile: Expo-проект `@sultandelux/kazcrmmobile`, EAS Update endpoint `https://u.expo.dev/db280bc1-ad39-4958-8ec1-cb8096a316da`, preview-канал привязан к живому backend
 
-## Structure
+## Структура
 
-| Folder | Stack | Role |
+| Папка | Стек | Роль |
 |---|---|---|
-| `nextkazcrmai/` | TypeScript · Express 4 · Mongoose 8 · Groq SDK 1.x (Llama 3.3 70B) | API + 3-agent AI pipeline (classify → prioritize → route) |
-| `kazcrmmobile/` | Expo SDK 55 · Expo Router 55 · React 19.2 · RN 0.83 · Zustand | Mobile client with EAS Update + Build configured |
+| `nextkazcrmai/` | TypeScript · Express 4 · Mongoose 8 · Groq SDK 1.x (Llama 3.3 70B) | API + AI-пайплайн из 3 агентов (classify → prioritize → route) |
+| `webkazcrmai/` | TypeScript · Next.js 16 · React 19 · Tailwind 4 | Web-админка (RU локализация) |
+| `kazcrmmobile/` | Expo SDK 55 · Expo Router 55 · React 19.2 · RN 0.83 · Zustand | Мобильный клиент с настроенными EAS Update + Build |
 
-Both apps use **yarn 1**.
+Все приложения используют **yarn 1**.
 
-## How the deployed demo works
+## Как работает задеплоенное демо
 
-`src/server.ts` resolves the Mongo URI in this order:
+`src/server.ts` определяет Mongo URI в таком порядке:
 
-1. `MONGODB_URI` env → use the real cluster
-2. otherwise → spin up `mongodb-memory-server` in-process and auto-seed if the `users` collection is empty (42 tickets, 15 KZ clients, 7 users)
+1. Если есть env `MONGODB_URI` → подключается к реальному кластеру
+2. Иначе → поднимает `mongodb-memory-server` в самом процессе и авто-сидит данные, если коллекция `users` пустая (42 тикета, 15 KZ-клиентов, 7 пользователей)
 
-On Render free tier, the container sleeps after 15 min idle; the first request after sleep cold-starts mongod and reseeds — so the demo always starts in a known good state. To run with persistent storage, set `MONGODB_URI` to an Atlas/SRV string in Render's env and the fallback is skipped.
+На бесплатном Render контейнер засыпает после 15 минут простоя. Первый запрос после сна делает cold-start mongod и пересидит данные — поэтому демо всегда стартует в известном рабочем состоянии. Чтобы использовать постоянное хранилище, задай `MONGODB_URI` (Atlas/SRV) в env Render — fallback тогда пропускается.
 
-## Local quickstart
+## Быстрый старт локально
 
 ```sh
-# Backend (works with or without a real MongoDB)
+# Backend (работает с реальной MongoDB или без неё)
 cd nextkazcrmai && yarn install && yarn dev
 
-# Mobile (talks to local backend by default)
+# Web-админка (по умолчанию ходит в задеплоенный backend)
+cd webkazcrmai && yarn install && yarn dev
+
+# Mobile (по умолчанию ходит в локальный backend)
 cd kazcrmmobile && cp .env.example .env && yarn install && yarn start
 ```
 
-## Backend scripts (`nextkazcrmai`)
+## Скрипты backend (`nextkazcrmai`)
 
 ```sh
 yarn dev        # tsx watch src/server.ts
 yarn build      # tsc -> dist/
-yarn start      # node dist/server.js (Render runs this)
-yarn seed       # tsx src/seed.ts (requires MONGODB_URI)
+yarn start      # node dist/server.js (это запускает Render)
+yarn seed       # tsx src/seed.ts (требует MONGODB_URI)
 yarn typecheck  # tsc --noEmit
 ```
 
-## Mobile scripts (`kazcrmmobile`)
+## Скрипты web-админки (`webkazcrmai`)
+
+```sh
+yarn dev        # next dev (Turbopack)
+yarn build      # next build
+yarn start      # next start
+yarn lint       # eslint
+```
+
+## Скрипты mobile (`kazcrmmobile`)
 
 ```sh
 yarn start                # expo start
-yarn update:preview       # publish EAS update on preview channel
-yarn build:preview        # internal-distribution build
-yarn build:production     # store-ready build
+yarn update:preview       # публикация EAS update в preview-канал
+yarn build:preview        # сборка для внутренней раздачи
+yarn build:production     # сборка под сторы
 ```
 
-## Env vars
+## Переменные окружения
 
-`nextkazcrmai/.env` (gitignored):
+`nextkazcrmai/.env` (в .gitignore):
 
 ```
-MONGODB_URI=          # leave blank for in-memory + auto-seed
+MONGODB_URI=          # пусто = in-memory + авто-сид
 JWT_SECRET=...
 GROQ_API_KEY=gsk_...
-SEED_ON_BOOT=         # set to "true" to force auto-seed against any URI
+SEED_ON_BOOT=         # "true" — форс авто-сид при любом URI
 ```
 
 `kazcrmmobile/.env`:
@@ -73,8 +87,18 @@ SEED_ON_BOOT=         # set to "true" to force auto-seed against any URI
 EXPO_PUBLIC_API_URL=https://kazcrm.onrender.com/api
 ```
 
-## Verified
+`webkazcrmai/.env.local` (опционально):
 
-- `yarn typecheck` passes on both apps
-- `npx expo-doctor` passes 18/18 on mobile
-- 46-check API exercise (auth, ticket list/detail/create/update with full Groq pipeline, clients with search, users/operators, analytics shape, status transition side-effects, 401/404/400 negatives) passes against the deployed Render backend
+```
+NEXT_PUBLIC_API_URL=https://kazcrm.onrender.com/api
+```
+
+## Локализация
+
+Web и mobile UI — на русском. Категории заявок (`technical_issue`, `billing`, `general_inquiry`, `account_access`, `integration`, `feature_request`, `complaint`, `urgent_outage`), статусы и приоритеты переводятся на лету через словари в `src/lib/i18n.ts` (web) и `lib/i18n.ts` (mobile). API-значения остаются на английском — переводятся только подписи в UI.
+
+## Проверено
+
+- `yarn typecheck` / `npx tsc --noEmit` проходит на всех трёх приложениях
+- `npx expo-doctor` — 18/18 на мобильном
+- Прогон API из 46 проверок (auth, список/деталь/создание/обновление тикетов с полным Groq-пайплайном, клиенты с поиском, users/operators, форма аналитики, побочные эффекты смены статуса, негативы 401/404/400) проходит на задеплоенном Render-бэкенде
