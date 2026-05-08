@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { api } from "../../../lib/api";
 
