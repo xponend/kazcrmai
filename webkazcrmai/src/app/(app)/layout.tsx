@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -134,7 +134,39 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [helpOpen, setHelpOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const isJ = e.key === "j" || e.key === "J" || e.key === "о" || e.key === "О";
+      if ((e.metaKey || e.ctrlKey) && isJ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+      if (e.key === "Escape") {
+        setHelpOpen(false);
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const toggleSidebar = () => {
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) {
+      setCollapsed((v) => !v);
+    } else {
+      setMobileOpen((v) => !v);
+    }
+  };
 
   if (loading || !user) {
     return (
@@ -160,7 +192,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex-1 flex">
-      <aside className={`${collapsed ? "w-16" : "w-64"} shrink-0 border-r border-neutral-800 bg-[#0a0a0a] flex flex-col transition-all`}>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden
+        />
+      )}
+      <aside
+        className={`shrink-0 border-r border-neutral-800 bg-[#0a0a0a] flex-col transition-all
+          fixed inset-y-0 left-0 w-64 z-50
+          md:static md:z-auto ${collapsed ? "md:w-16" : "md:w-64"}
+          ${mobileOpen ? "flex" : "hidden md:flex"}`}
+      >
         <div className={`px-4 py-4 ${collapsed ? "px-2" : ""}`}>
           <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5"}`}>
             <div className="w-8 h-8 rounded-full bg-violet-600 grid place-items-center font-bold text-white shrink-0">
@@ -218,9 +262,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        <header className="flex items-center gap-3 px-4 py-3 border-b border-neutral-800 bg-[#0a0a0a]/95 backdrop-blur">
+        <header className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 border-b border-neutral-800 bg-[#0a0a0a]/95 backdrop-blur">
           <button
-            onClick={() => setCollapsed((v) => !v)}
+            onClick={toggleSidebar}
             title={collapsed ? "Развернуть" : "Свернуть"}
             className="p-2 rounded-md hover:bg-neutral-800 text-neutral-400 hover:text-neutral-100"
           >
@@ -231,6 +275,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="relative flex-1">
               <Search size={14} strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
               <input
+                ref={searchInputRef}
                 type="search"
                 placeholder="Search something..."
                 value={searchQuery}
@@ -240,24 +285,81 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <button
               type="submit"
-              className="px-3.5 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium flex items-center gap-2"
+              className="px-3 sm:px-3.5 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium flex items-center gap-2"
             >
               <Search size={14} strokeWidth={2} />
-              Search
+              <span className="hidden sm:inline">Search</span>
             </button>
-            <kbd className="hidden md:inline-flex items-center px-2 py-1 rounded border border-neutral-800 bg-neutral-900 text-[11px] text-neutral-400 font-mono">
+            <button
+              type="button"
+              onClick={() => {
+                searchInputRef.current?.focus();
+                searchInputRef.current?.select();
+              }}
+              title="Фокус на поиск (⌘J)"
+              className="hidden md:inline-flex items-center px-2 py-1 rounded border border-neutral-800 bg-neutral-900 text-[11px] text-neutral-400 font-mono hover:bg-neutral-800 hover:text-neutral-200 transition-colors"
+            >
               ⌘ J
-            </kbd>
+            </button>
           </form>
 
-          <div className="flex items-center gap-2">
-            <button className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-neutral-800 hover:bg-neutral-800 text-sm text-neutral-300">
+          <div className="relative flex items-center gap-2">
+            <a
+              href="mailto:xponend@gmail.com?subject=kazcrmai%20feedback"
+              className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-neutral-800 hover:bg-neutral-800 text-sm text-neutral-300"
+            >
               <MessagesSquare size={14} strokeWidth={1.75} />
               Feedback
-            </button>
-            <button title="Помощь" className="p-2 rounded-md hover:bg-neutral-800 text-neutral-400 hover:text-neutral-100">
+            </a>
+            <button
+              type="button"
+              onClick={() => setHelpOpen((v) => !v)}
+              title="Помощь"
+              aria-expanded={helpOpen}
+              className={`p-2 rounded-md text-neutral-400 hover:text-neutral-100 ${helpOpen ? "bg-neutral-800 text-neutral-100" : "hover:bg-neutral-800"}`}
+            >
               <HelpCircle size={18} strokeWidth={1.75} />
             </button>
+            {helpOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setHelpOpen(false)}
+                  aria-hidden
+                />
+                <div
+                  role="dialog"
+                  className="absolute right-0 top-full mt-2 w-72 rounded-lg border border-neutral-800 bg-[#0a0a0a] shadow-xl z-50 p-4 text-sm"
+                >
+                  <div className="font-semibold text-neutral-100 mb-2">Помощь</div>
+                  <div className="text-neutral-400 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span>Фокус на поиск</span>
+                      <kbd className="px-1.5 py-0.5 rounded border border-neutral-800 bg-neutral-900 text-[11px] font-mono">⌘ J</kbd>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Закрыть подсказку</span>
+                      <kbd className="px-1.5 py-0.5 rounded border border-neutral-800 bg-neutral-900 text-[11px] font-mono">Esc</kbd>
+                    </div>
+                  </div>
+                  <div className="border-t border-neutral-800 mt-3 pt-3 space-y-1.5">
+                    <Link
+                      href="/chat"
+                      onClick={() => setHelpOpen(false)}
+                      className="block px-2 py-1.5 rounded hover:bg-neutral-800 text-neutral-200"
+                    >
+                      Спросить ИИ-ассистента
+                    </Link>
+                    <a
+                      href="mailto:xponend@gmail.com?subject=kazcrmai%20support"
+                      className="block px-2 py-1.5 rounded hover:bg-neutral-800 text-neutral-200"
+                    >
+                      Написать в поддержку
+                    </a>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </header>
 

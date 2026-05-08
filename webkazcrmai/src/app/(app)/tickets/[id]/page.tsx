@@ -59,17 +59,17 @@ export default function TicketDetailPage() {
   const [commentDraft, setCommentDraft] = useState("");
   const [commentSending, setCommentSending] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const { ticket, history } = await api.getTicket(id);
       setTicket(ticket);
       setHistory(history);
     } catch (err) {
-      setError((err as { message?: string }).message ?? "Не удалось загрузить заявку");
+      if (!silent) setError((err as { message?: string }).message ?? "Не удалось загрузить заявку");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -89,7 +89,7 @@ export default function TicketDetailPage() {
     setUpdating(true);
     try {
       await api.updateTicket(id, { assigneeId });
-      await load();
+      await load(true);
     } catch (err) {
       alert((err as { message?: string }).message ?? "Не удалось переназначить");
     } finally {
@@ -102,7 +102,7 @@ export default function TicketDetailPage() {
     setUpdating(true);
     try {
       await api.updateTicket(id, { priority });
-      await load();
+      await load(true);
     } catch (err) {
       alert((err as { message?: string }).message ?? "Не удалось изменить приоритет");
     } finally {
@@ -116,7 +116,7 @@ export default function TicketDetailPage() {
     if (!next) return;
     try {
       await api.updateTicket(id, { status: next });
-      await load();
+      await load(true);
     } catch (err) {
       alert((err as { message?: string }).message ?? "Не удалось обновить");
     }
@@ -177,7 +177,7 @@ export default function TicketDetailPage() {
     try {
       await api.addComment(id, text);
       setCommentDraft("");
-      await load();
+      await load(true);
     } catch (err) {
       alert((err as { message?: string }).message ?? "Не удалось добавить комментарий");
     } finally {
@@ -189,12 +189,12 @@ export default function TicketDetailPage() {
   if (error || !ticket) return <div className="p-8 text-sm text-red-300">{error ?? "Заявка не найдена"}</div>;
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-4 sm:space-y-6">
       <button onClick={() => router.back()} className="text-xs text-neutral-400 hover:text-neutral-50 inline-flex items-center gap-1">
         <ArrowLeft size={12} strokeWidth={2} /> Назад
       </button>
 
-      <div className="bg-[#161616] border border-neutral-800 rounded-xl p-6">
+      <div className="bg-[#161616] border border-neutral-800 rounded-xl p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-neutral-800">{ticket.status}</span>
           <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">{ticket.priority}</span>
@@ -284,7 +284,7 @@ export default function TicketDetailPage() {
 
       {/* AI assist */}
       <div>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             { key: "reply" as const, label: "Ответ", Icon: MessageSquare },
             { key: "summary" as const, label: "Саммари", Icon: FileText },
@@ -382,7 +382,7 @@ export default function TicketDetailPage() {
       </div>
 
       {/* Timeline */}
-      <div className="bg-[#161616] border border-neutral-800 rounded-xl p-6">
+      <div className="bg-[#161616] border border-neutral-800 rounded-xl p-4 sm:p-6">
         <div className="text-sm font-semibold mb-4">История</div>
         <div className="space-y-4">
           {history.map((h, i) => (
@@ -409,7 +409,7 @@ export default function TicketDetailPage() {
           ))}
         </div>
 
-        <div className="flex gap-2 mt-5 pt-4 border-t border-neutral-800">
+        <div className="flex flex-col sm:flex-row gap-2 mt-5 pt-4 border-t border-neutral-800">
           <textarea
             value={commentDraft}
             onChange={(e) => setCommentDraft(e.target.value)}
@@ -421,7 +421,7 @@ export default function TicketDetailPage() {
           <button
             onClick={submitComment}
             disabled={!commentDraft.trim() || commentSending}
-            className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 self-start inline-flex items-center gap-1.5"
+            className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 sm:self-start inline-flex items-center justify-center gap-1.5"
           >
             <Send size={13} strokeWidth={2} />
             {commentSending ? "…" : "Отправить"}
