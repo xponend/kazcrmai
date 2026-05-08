@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
+import { statusLabel, priorityLabel, categoryLabel } from "../../lib/i18n";
 
 type Tile = {
   href?: string;
@@ -67,10 +68,10 @@ function RecentRow({ t }: { t: any }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-            <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${STATUS_COLOR[t.status] ?? "bg-neutral-700"}`}>{t.status}</span>
-            <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${PRIO_COLOR[t.priority] ?? "bg-neutral-700"}`}>{t.priority}</span>
+            <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${STATUS_COLOR[t.status] ?? "bg-neutral-700"}`}>{statusLabel(t.status)}</span>
+            <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${PRIO_COLOR[t.priority] ?? "bg-neutral-700"}`}>{priorityLabel(t.priority)}</span>
             {(t.aiCategory || t.category) && (
-              <span className="text-[10px] text-violet-300 bg-violet-500/15 px-1.5 py-0.5 rounded">{t.aiCategory ?? t.category}</span>
+              <span className="text-[10px] text-violet-300 bg-violet-500/15 px-1.5 py-0.5 rounded">{categoryLabel(t.aiCategory ?? t.category)}</span>
             )}
           </div>
           <div className="text-sm font-medium text-neutral-100 truncate">{t.title}</div>
@@ -120,14 +121,14 @@ export default function DashboardPage() {
     : 0;
 
   const tiles: Tile[] = [
-    { label: "Total tickets", value: analytics?.totalTickets ?? "—", icon: Ticket, href: "/tickets", emphasis: true },
-    { label: "Open tickets", value: analytics?.openTickets ?? "—", icon: Flame, href: "/tickets", hint: analytics?.totalTickets ? `${Math.round((analytics.openTickets / analytics.totalTickets) * 100)}% открытых` : undefined },
-    { label: "Avg processing", value: analytics?.avgProcessingMins != null ? `${Math.round(analytics.avgProcessingMins)} мин` : "—", icon: Clock, hint: analytics?.avgFirstResponseMins != null ? `Ответ за ${Math.round(analytics.avgFirstResponseMins)} мин` : undefined },
-    { label: "AI processed", value: aiProcessedPct ? `${aiProcessedPct}%` : "—", icon: Sparkles, hint: analytics?.aiProcessed ? `${analytics.aiProcessed} из ${analytics.totalTickets}` : undefined },
-    { label: "Clients", value: clientsCount ?? "—", icon: Building2, href: "/clients" },
-    { label: "Operators", value: operatorsCount ?? "—", icon: Users },
-    { label: "Resolved", value: analytics?.resolvedTickets ?? "—", icon: CheckCircle2 },
-    { label: "Categories", value: analytics?.byCategory?.length ?? "—", icon: Tag },
+    { label: "Всего заявок", value: analytics?.totalTickets ?? "—", icon: Ticket, href: "/tickets", emphasis: true },
+    { label: "Открытые", value: analytics?.openTickets ?? "—", icon: Flame, href: "/tickets", hint: analytics?.totalTickets ? `${Math.round((analytics.openTickets / analytics.totalTickets) * 100)}% открытых` : undefined },
+    { label: "Ср. обработка", value: analytics?.avgProcessingMins != null ? `${Math.round(analytics.avgProcessingMins)} мин` : "—", icon: Clock, hint: analytics?.avgFirstResponseMins != null ? `Ответ за ${Math.round(analytics.avgFirstResponseMins)} мин` : undefined },
+    { label: "Обработано ИИ", value: aiProcessedPct ? `${aiProcessedPct}%` : "—", icon: Sparkles, hint: analytics?.aiProcessed ? `${analytics.aiProcessed} из ${analytics.totalTickets}` : undefined },
+    { label: "Клиенты", value: clientsCount ?? "—", icon: Building2, href: "/clients" },
+    { label: "Операторы", value: operatorsCount ?? "—", icon: Users },
+    { label: "Решено", value: analytics?.resolvedTickets ?? "—", icon: CheckCircle2 },
+    { label: "Категории", value: analytics?.byCategory?.length ?? "—", icon: Tag },
   ];
 
   const greeting = (() => {
@@ -143,12 +144,12 @@ export default function DashboardPage() {
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold text-neutral-50">{greeting}, {user?.name?.split(" ")[0] ?? "—"}</h1>
-          <p className="text-sm text-neutral-400 mt-1">Welcome to kazcrmai cockpit, here you can see your company overview</p>
+          <p className="text-sm text-neutral-400 mt-1">Добро пожаловать в kazcrmai. Здесь — общий обзор по вашей компании.</p>
         </div>
         <div className="flex items-center gap-2 text-[11px]">
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${aiAvailable ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" : "bg-amber-500/15 text-amber-300 border border-amerald-500/30"}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${aiAvailable ? "bg-emerald-400" : "bg-amber-400"}`} />
-            {aiAvailable ? "AI online" : "AI pending deploy"}
+            {aiAvailable ? "ИИ онлайн" : "ИИ ожидает деплоя"}
           </span>
         </div>
       </header>
@@ -163,11 +164,11 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 bg-[#161616] border border-neutral-800 rounded-xl">
           <div className="px-5 py-4 flex items-center justify-between border-b border-neutral-800">
             <div>
-              <div className="font-semibold text-neutral-100">Recent tickets</div>
-              <div className="text-xs text-neutral-500 mt-0.5">Свежие обращения</div>
+              <div className="font-semibold text-neutral-100">Свежие заявки</div>
+              <div className="text-xs text-neutral-500 mt-0.5">Последние обращения</div>
             </div>
             <Link href="/tickets" className="text-xs font-medium text-violet-400 hover:text-violet-300 inline-flex items-center gap-1">
-              All <ArrowRight size={12} strokeWidth={2} />
+              Все <ArrowRight size={12} strokeWidth={2} />
             </Link>
           </div>
           <div className="divide-y divide-neutral-800">
@@ -183,7 +184,7 @@ export default function DashboardPage() {
           <div className="bg-gradient-to-br from-violet-600/10 to-[#161616] border border-violet-500/30 rounded-xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles size={16} strokeWidth={1.75} className="text-violet-400" />
-              <span className="font-semibold text-neutral-100">AI digest</span>
+              <span className="font-semibold text-neutral-100">ИИ-дайджест</span>
               <span className="text-[10px] text-neutral-400 ml-auto">за 24ч</span>
             </div>
             {digest ? (

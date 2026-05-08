@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, ArrowLeft } from "lucide-react";
 import { api } from "../../../../lib/api";
 import { useAuth } from "../../../../lib/auth";
+import { priorityLabel, categoryLabel } from "../../../../lib/i18n";
 
 type TicketRow = {
   _id: string;
@@ -136,11 +137,11 @@ export default function KanbanBoardPage() {
                         <Link href={`/tickets/${t._id}`} className="block">
                           <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                             <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${PRIO_COLOR[t.priority] ?? "bg-neutral-700"}`}>
-                              {t.priority}
+                              {priorityLabel(t.priority)}
                             </span>
                             {(t.aiCategory || t.category) && (
                               <span className="text-[10px] text-violet-300 bg-violet-500/15 px-1.5 py-0.5 rounded">
-                                {t.aiCategory ?? t.category}
+                                {categoryLabel(t.aiCategory ?? t.category)}
                               </span>
                             )}
                           </div>

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../../lib/api";
 import { useAuth } from "../../../../lib/auth";
+import { statusLabel, priorityLabel, categoryLabel } from "../../../../lib/i18n";
 
 const NEXT_STATUS: Record<string, string> = {
   new: "in_progress",
@@ -196,11 +197,11 @@ export default function TicketDetailPage() {
 
       <div className="bg-[#161616] border border-neutral-800 rounded-xl p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-neutral-800">{ticket.status}</span>
-          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">{ticket.priority}</span>
+          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-neutral-800">{statusLabel(ticket.status)}</span>
+          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">{priorityLabel(ticket.priority)}</span>
           {(ticket.aiCategory || ticket.category) && (
             <span className="text-[10px] text-violet-300 bg-violet-500/10 px-1.5 py-0.5 rounded">
-              {ticket.aiCategory ?? ticket.category}
+              {categoryLabel(ticket.aiCategory ?? ticket.category)}
             </span>
           )}
         </div>
@@ -272,10 +273,10 @@ export default function TicketDetailPage() {
                 disabled={updating}
                 className="mt-1 w-full px-2 py-1.5 rounded-md border border-neutral-800 text-xs bg-[#161616]"
               >
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
-                <option value="critical">critical</option>
+                <option value="low">Низкий</option>
+                <option value="medium">Средний</option>
+                <option value="high">Высокий</option>
+                <option value="critical">Критический</option>
               </select>
             </label>
           </div>
@@ -342,7 +343,7 @@ export default function TicketDetailPage() {
                   {similar.map((t) => (
                     <li key={t._id} className="border-b border-neutral-800 last:border-0 pb-2 last:pb-0">
                       <div className="font-medium text-neutral-200">{t.title}</div>
-                      <div className="text-xs text-neutral-400">[{t.aiCategory ?? t.category ?? "—"}] · {t.status}</div>
+                      <div className="text-xs text-neutral-400">[{categoryLabel(t.aiCategory ?? t.category)}] · {statusLabel(t.status)}</div>
                     </li>
                   ))}
                 </ul>
@@ -393,10 +394,10 @@ export default function TicketDetailPage() {
               <div className="min-w-0 flex-1">
                 <div className="text-xs font-semibold text-neutral-100">
                   {h.action === "created" && "Заявка создана"}
-                  {h.action === "status_changed" && `Статус: ${h.oldValue} → ${h.newValue}`}
+                  {h.action === "status_changed" && `Статус: ${statusLabel(h.oldValue)} → ${statusLabel(h.newValue)}`}
                   {h.action === "assigned" && "Назначен исполнитель"}
                   {h.action === "ai_processed" && "ИИ-анализ выполнен"}
-                  {h.action === "priority_changed" && `Приоритет: ${h.oldValue} → ${h.newValue}`}
+                  {h.action === "priority_changed" && `Приоритет: ${priorityLabel(h.oldValue)} → ${priorityLabel(h.newValue)}`}
                   {h.action === "comment" && "Комментарий"}
                 </div>
                 {h.comment && <div className="text-sm text-neutral-200 mt-0.5 leading-5">{h.comment}</div>}

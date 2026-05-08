@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../../lib/api";
+import { categoryLabel, priorityLabel } from "../../../../lib/i18n";
 
 export default function NewTicketPage() {
   const router = useRouter();
@@ -104,13 +105,13 @@ export default function NewTicketPage() {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <span className="text-neutral-400">Категория:</span>{" "}
-                  <span className="font-semibold">{preview.classification.category}</span>{" "}
+                  <span className="font-semibold">{categoryLabel(preview.classification.category)}</span>{" "}
                   <span className="text-neutral-500">({Math.round(preview.classification.confidence * 100)}%)</span>
                 </div>
                 <div>
                   <span className="text-neutral-400">Приоритет:</span>{" "}
                   <span className={`font-semibold ${preview.priority.priority === "critical" ? "text-red-300" : preview.priority.priority === "high" ? "text-amber-600" : "text-neutral-200"}`}>
-                    {preview.priority.priority}
+                    {priorityLabel(preview.priority.priority)}
                   </span>{" "}
                   <span className="text-neutral-500">({preview.priority.score}/100)</span>
                 </div>

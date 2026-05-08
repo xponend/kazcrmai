@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { api } from "../../../lib/api";
+import { categoryLabel } from "../../../lib/i18n";
 
 const WINDOWS = [
   { hours: 24, label: "24ч" },
@@ -116,7 +117,7 @@ export default function AnalyticsPage() {
               <ul className="space-y-1">
                 {(analytics.byCategory ?? []).map((c: any) => (
                   <li key={c._id} className="flex justify-between text-sm">
-                    <span className="text-neutral-200">{c._id ?? "—"}</span>
+                    <span className="text-neutral-200">{categoryLabel(c._id)}</span>
                     <span className="font-mono text-neutral-400">{c.count}</span>
                   </li>
                 ))}

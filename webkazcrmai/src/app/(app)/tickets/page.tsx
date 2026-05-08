@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth";
+import { statusLabel, priorityLabel, categoryLabel } from "../../../lib/i18n";
 
 const STATUS_FILTERS = [
   { key: "", label: "Все" },
@@ -15,10 +16,10 @@ const STATUS_FILTERS = [
 
 const PRIORITY_FILTERS = [
   { key: "", label: "Все приоритеты" },
-  { key: "critical", label: "Critical" },
-  { key: "high", label: "High" },
-  { key: "medium", label: "Medium" },
-  { key: "low", label: "Low" },
+  { key: "critical", label: "Критический" },
+  { key: "high", label: "Высокий" },
+  { key: "medium", label: "Средний" },
+  { key: "low", label: "Низкий" },
 ];
 
 const PRIO_COLOR: Record<string, string> = {
@@ -177,14 +178,14 @@ export default function TicketsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${STATUS_COLOR[t.status] ?? "bg-neutral-800"}`}>
-                      {t.status}
+                      {statusLabel(t.status)}
                     </span>
                     <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${PRIO_COLOR[t.priority] ?? "bg-neutral-800"}`}>
-                      {t.priority}
+                      {priorityLabel(t.priority)}
                     </span>
                     {(t.aiCategory || t.category) && (
                       <span className="text-[10px] text-violet-300 bg-violet-500/10 px-1.5 py-0.5 rounded">
-                        {t.aiCategory ?? t.category}
+                        {categoryLabel(t.aiCategory ?? t.category)}
                       </span>
                     )}
                   </div>

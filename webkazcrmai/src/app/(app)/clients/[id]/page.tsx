@@ -5,6 +5,7 @@ import { Sparkles } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "../../../../lib/api";
+import { statusLabel, priorityLabel, categoryLabel } from "../../../../lib/i18n";
 
 const STATUS_COLOR: Record<string, string> = {
   new: "bg-blue-500/20 text-blue-300",
@@ -133,10 +134,10 @@ export default function ClientDetailPage() {
                 className="block p-4 hover:bg-[#0a0a0a] transition"
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${STATUS_COLOR[t.status] ?? "bg-neutral-800"}`}>{t.status}</span>
-                  <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${PRIO_COLOR[t.priority] ?? "bg-neutral-800"}`}>{t.priority}</span>
+                  <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${STATUS_COLOR[t.status] ?? "bg-neutral-800"}`}>{statusLabel(t.status)}</span>
+                  <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${PRIO_COLOR[t.priority] ?? "bg-neutral-800"}`}>{priorityLabel(t.priority)}</span>
                   {(t.aiCategory || t.category) && (
-                    <span className="text-[10px] text-violet-300 bg-violet-500/10 px-1.5 py-0.5 rounded">{t.aiCategory ?? t.category}</span>
+                    <span className="text-[10px] text-violet-300 bg-violet-500/10 px-1.5 py-0.5 rounded">{categoryLabel(t.aiCategory ?? t.category)}</span>
                   )}
                 </div>
                 <div className="text-sm font-medium">{t.title}</div>

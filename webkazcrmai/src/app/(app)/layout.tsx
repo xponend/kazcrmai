@@ -24,6 +24,29 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 
+function BrandMark({ size = 32 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      <rect width="32" height="32" rx="7.2" fill="#F1ECE0" />
+      <g stroke="#1A1816" strokeWidth="3.4" strokeLinecap="round" fill="none">
+        <line x1="10.5" y1="7.5" x2="10.5" y2="24.5" />
+        <line x1="10.7" y1="16" x2="22" y2="8" />
+        <line x1="10.7" y1="16" x2="22" y2="24" />
+      </g>
+      <path
+        d="M24.6 7.4 L25.3 9.1 L27 9.8 L25.3 10.5 L24.6 12.2 L23.9 10.5 L22.2 9.8 L23.9 9.1 Z"
+        fill="#D97757"
+      />
+    </svg>
+  );
+}
+
 type NavItem = { href: string; label: string; icon: LucideIcon };
 type NavSection = { label: string; icon: LucideIcon; items: NavItem[]; defaultOpen?: boolean };
 
@@ -207,9 +230,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       >
         <div className={`px-4 py-4 ${collapsed ? "px-2" : ""}`}>
           <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5"}`}>
-            <div className="w-8 h-8 rounded-full bg-violet-600 grid place-items-center font-bold text-white shrink-0">
-              k
-            </div>
+            <BrandMark />
             {!collapsed && <div className="font-semibold tracking-tight text-neutral-50">kazcrmai</div>}
           </div>
         </div>
@@ -217,13 +238,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <nav className={`flex-1 overflow-y-auto ${collapsed ? "px-2" : "px-3"} py-2 space-y-1`}>
           <Link
             href="/"
-            title="Dashboard"
+            title="Дашборд"
             className={`flex items-center ${collapsed ? "justify-center w-10 h-10" : "gap-2.5 px-3 py-2"} rounded-md text-sm transition-colors ${
               pathname === "/" ? "bg-violet-600/20 text-violet-300" : "text-neutral-300 hover:bg-neutral-800"
             }`}
           >
             <Home size={18} strokeWidth={1.75} />
-            {!collapsed && <span className="font-medium">Dashboard</span>}
+            {!collapsed && <span className="font-medium">Дашборд</span>}
           </Link>
 
           {SECTIONS.map((s) => (
@@ -277,7 +298,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <input
                 ref={searchInputRef}
                 type="search"
-                placeholder="Search something..."
+                placeholder="Поиск по заявкам и клиентам…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 rounded-lg border border-neutral-800 bg-neutral-900/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40"
@@ -288,7 +309,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               className="px-3 sm:px-3.5 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium flex items-center gap-2"
             >
               <Search size={14} strokeWidth={2} />
-              <span className="hidden sm:inline">Search</span>
+              <span className="hidden sm:inline">Найти</span>
             </button>
             <button
               type="button"
@@ -309,7 +330,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-neutral-800 hover:bg-neutral-800 text-sm text-neutral-300"
             >
               <MessagesSquare size={14} strokeWidth={1.75} />
-              Feedback
+              Отзыв
             </a>
             <button
               type="button"
