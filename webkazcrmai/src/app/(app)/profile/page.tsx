@@ -6,6 +6,77 @@ import { api, ApiError } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth";
 import { ROLE_LABELS } from "../../../lib/i18n";
 
+function ProfileEditCard() {
+  const { user, updateProfile } = useAuth();
+  const [name, setName] = useState(user?.name ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const dirty = name.trim() !== (user?.name ?? "") || email.trim() !== (user?.email ?? "");
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setDone(false);
+    if (!name.trim()) {
+      setError("Имя не может быть пустым");
+      return;
+    }
+    setBusy(true);
+    try {
+      await updateProfile({ name: name.trim(), email: email.trim() });
+      setDone(true);
+    } catch (err) {
+      const msg =
+        err instanceof ApiError && (err as ApiError).code === "EMAIL_TAKEN"
+          ? "Этот email уже занят"
+          : err instanceof Error
+            ? err.message
+            : "Не удалось обновить профиль";
+      setError(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const inputCls =
+    "w-full px-3 py-2 rounded-md border border-neutral-800 bg-neutral-900/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40";
+
+  return (
+    <div className="bg-[#161616] border border-neutral-800 rounded-xl p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <UserIcon size={16} strokeWidth={1.75} className="text-neutral-400" />
+        <span className="text-sm font-semibold text-neutral-100">Имя и логин</span>
+      </div>
+      <form onSubmit={submit} className="space-y-3 max-w-sm">
+        <label className="block">
+          <span className="text-xs text-neutral-500">Имя</span>
+          <input className={inputCls} value={name} onChange={(e) => { setName(e.target.value); setDone(false); }} required />
+        </label>
+        <label className="block">
+          <span className="text-xs text-neutral-500">Email (логин)</span>
+          <input className={inputCls} type="email" value={email} onChange={(e) => { setEmail(e.target.value); setDone(false); }} required />
+        </label>
+        {error && <div className="text-xs text-red-400">{error}</div>}
+        {done && (
+          <div className="text-xs text-emerald-400 inline-flex items-center gap-1">
+            <Check size={13} strokeWidth={2} /> Сохранено
+          </div>
+        )}
+        <button
+          type="submit"
+          disabled={busy || !dirty}
+          className="px-4 py-2 rounded-md bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium"
+        >
+          {busy ? "Сохранение…" : "Сохранить"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function ChangePasswordCard() {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -181,6 +252,8 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <ProfileEditCard />
 
       <ChangePasswordCard />
 

@@ -173,6 +173,16 @@ export const api = {
     tokenStore.clear();
   },
   me: () => request<{ user: AuthUser }>("/auth/me"),
+  // Update display name and/or login email. Persists the refreshed user locally.
+  async updateProfile(data: { name?: string; email?: string }) {
+    const { user } = await request<{ user: AuthUser }>("/auth/profile", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+    const access = tokenStore.getAccess();
+    if (access) tokenStore.set(access, tokenStore.getRefresh(), user);
+    return user;
+  },
   // Self-service password change. Returns rotated tokens (current session stays valid).
   async changePassword(currentPassword: string, newPassword: string) {
     const raw = await request<unknown>("/auth/change-password", {

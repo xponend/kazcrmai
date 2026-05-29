@@ -17,6 +17,7 @@ type AuthCtx = {
   aiAvailable: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -81,6 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await api.logout();
           setUser(null);
           router.replace("/login");
+        },
+        updateProfile: async (data) => {
+          const updated = await api.updateProfile(data);
+          setUser(updated);
         },
       }}
     >

@@ -185,6 +185,54 @@ const login: RequestHandler = async (req, res) => {
   }
 };
 
+/** Self-service profile update — change display name and/or login email. */
+const updateProfile: RequestHandler = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      res.status(401).json({ error: "Не авторизовано" });
+      return;
+    }
+    const { name, email } = req.body as { name?: string; email?: string };
+    if (name === undefined && email === undefined) {
+      res.status(400).json({ error: "Нечего обновлять" });
+      return;
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(401).json({ error: "Пользователь не найден" });
+      return;
+    }
+    if (typeof name === "string") {
+      if (name.trim().length === 0) {
+        res.status(400).json({ error: "Имя не может быть пустым" });
+        return;
+      }
+      user.name = name.trim();
+    }
+    if (typeof email === "string") {
+      const next = email.toLowerCase().trim();
+      if (!isValidEmail(next)) {
+        res.status(400).json({ error: "Некорректный email" });
+        return;
+      }
+      if (next !== user.email) {
+        const taken = await User.findOne({ email: next, _id: { $ne: user._id } });
+        if (taken) {
+          res.status(409).json({ error: "Этот email уже занят", code: "EMAIL_TAKEN" });
+          return;
+        }
+        user.email = next;
+      }
+    }
+    await user.save();
+    res.json({ user: publicUser(user) });
+  } catch (err) {
+    console.error("updateProfile error:", (err as Error).message);
+    res.status(500).json({ error: "Не удалось обновить профиль" });
+  }
+};
+
 const refresh: RequestHandler = async (req, res) => {
   try {
     const { refreshToken } = req.body as { refreshToken?: string };
@@ -265,6 +313,7 @@ router.post("/login", loginLimiter, login);
 router.post("/refresh", refresh);
 router.post("/logout", auth, logout);
 router.post("/change-password", auth, changePassword);
+router.patch("/profile", auth, updateProfile);
 router.get("/me", auth, me);
 
 export default router;
