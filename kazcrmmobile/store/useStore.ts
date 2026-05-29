@@ -2,6 +2,7 @@ import { create } from "zustand";
 import {
   login as apiLogin,
   changePassword as apiChangePassword,
+  updateProfile as apiUpdateProfile,
   getMe,
   logoutApi,
   tokenStore,
@@ -14,6 +15,7 @@ type Store = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
 };
@@ -38,6 +40,12 @@ export const useStore = create<Store>((set) => {
       // Persist the rotated tokens exactly like login so the session stays valid.
       await tokenStore.setTokens(payload.accessToken, payload.refreshToken);
       set({ user: payload.user });
+    },
+
+    updateProfile: async (data) => {
+      // Tokens don't change; just refresh the stored user.
+      const user = await apiUpdateProfile(data);
+      set({ user });
     },
 
     logout: async () => {

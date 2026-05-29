@@ -26,6 +26,12 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/edit-profile" as any)}>
+        <Ionicons name="create-outline" size={20} color="#1e40af" />
+        <Text style={styles.actionText}>Редактировать профиль</Text>
+        <Ionicons name="chevron-forward" size={18} color="#9ca3af" style={styles.actionChevron} />
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/change-password" as any)}>
         <Ionicons name="key-outline" size={20} color="#1e40af" />
         <Text style={styles.actionText}>Смена пароля</Text>

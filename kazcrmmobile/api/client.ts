@@ -163,6 +163,20 @@ export const changePassword = async (
   return normalizeAuthResponse(data);
 };
 
+/**
+ * Updates the current user's display name and/or login email. Bearer-authed
+ * (the request interceptor attaches the token). Tokens are NOT rotated, so the
+ * caller keeps existing tokens and only refreshes the stored user.
+ * Email already taken → 409 with { error, code: "EMAIL_TAKEN" }.
+ */
+export const updateProfile = async (data: {
+  name?: string;
+  email?: string;
+}): Promise<AuthUser> => {
+  const res = await api.patch<{ user: AuthUser }>("/auth/profile", data);
+  return res.data.user;
+};
+
 export const getTickets = (params?: Record<string, string>) =>
   api.get("/tickets", { params });
 

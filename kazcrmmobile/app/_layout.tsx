@@ -40,6 +40,14 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
+            name="edit-profile"
+            options={{
+              headerShown: true,
+              title: "Редактировать профиль",
+              headerTintColor: "#1e40af",
+            }}
+          />
+          <Stack.Screen
             name="change-password"
             options={{
               headerShown: true,
