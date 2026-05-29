@@ -2,9 +2,11 @@ import { Router, type RequestHandler } from "express";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import crypto from "crypto";
 import { User, type UserDoc } from "../models/User";
+import { Client } from "../models/Client";
 import { auth } from "../middleware/auth";
 import { env } from "../config/env";
 import { loginLimiter } from "../middleware/rateLimit";
+import { escapeRegex } from "../lib/validate";
 
 const ACCESS_TTL: SignOptions["expiresIn"] = env.ACCESS_TOKEN_TTL as SignOptions["expiresIn"];
 const REFRESH_TTL_MS = env.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000;
@@ -13,7 +15,13 @@ const MAX_ACTIVE_REFRESH_TOKENS = 5;
 const router = Router();
 
 function publicUser(u: UserDoc) {
-  return { id: u._id, name: u.name, email: u.email, role: u.role };
+  return {
+    id: u._id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    ...(u.clientId ? { clientId: String(u.clientId) } : {}),
+  };
 }
 
 function signAccessToken(u: UserDoc): string {
@@ -42,15 +50,23 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
 }
 
+/**
+ * Public self-registration — for CLIENT company workers using the landing
+ * portal. Always creates a `client` role tied to their company (a Client doc,
+ * found-or-created by company name). Staff accounts (operator/manager/admin)
+ * are NEVER created here — those go through the admin-only POST /api/users.
+ */
 const register: RequestHandler = async (req, res) => {
   try {
-    const { name, email, password } = req.body as {
+    const { name, email, password, company, phone } = req.body as {
       name?: string;
       email?: string;
       password?: string;
+      company?: string;
+      phone?: string;
     };
-    if (!name || !email || !password) {
-      res.status(400).json({ error: "Имя, email и пароль обязательны" });
+    if (!name || !email || !password || !company) {
+      res.status(400).json({ error: "Имя, email, пароль и компания обязательны" });
       return;
     }
     if (!isValidEmail(email)) {
@@ -68,11 +84,26 @@ const register: RequestHandler = async (req, res) => {
       return;
     }
 
+    // Find-or-create the company record this client belongs to.
+    const companyName = company.trim();
+    let client = await Client.findOne({
+      company: new RegExp(`^${escapeRegex(companyName)}$`, "i"),
+    });
+    if (!client) {
+      client = await Client.create({
+        name: companyName,
+        company: companyName,
+        ...(email && { email: email.toLowerCase().trim() }),
+        ...(phone && { phone: String(phone).trim() }),
+      });
+    }
+
     const user = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password,
-      role: "operator",
+      role: "client",
+      clientId: client._id,
     });
     // Reload with refreshTokens field selected so issueRefreshToken can persist.
     const userWithRefresh = await User.findById(user._id).select("+refreshTokens");
@@ -84,6 +115,52 @@ const register: RequestHandler = async (req, res) => {
   } catch (err) {
     console.error("register error:", (err as Error).message);
     res.status(500).json({ error: "Не удалось создать пользователя" });
+  }
+};
+
+/** Authenticated self-service password change. Keeps the current session
+ *  alive (issues fresh tokens) but revokes all OTHER devices. */
+const changePassword: RequestHandler = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      res.status(401).json({ error: "Не авторизовано" });
+      return;
+    }
+    const { currentPassword, newPassword } = req.body as {
+      currentPassword?: string;
+      newPassword?: string;
+    };
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ error: "Текущий и новый пароль обязательны" });
+      return;
+    }
+    if (newPassword.length < 8) {
+      res.status(400).json({ error: "Новый пароль должен быть не менее 8 символов" });
+      return;
+    }
+
+    const user = await User.findById(userId).select("+password +refreshTokens");
+    if (!user) {
+      res.status(401).json({ error: "Пользователь не найден" });
+      return;
+    }
+    if (!(await user.comparePassword(currentPassword))) {
+      res.status(400).json({ error: "Текущий пароль неверен", code: "BAD_PASSWORD" });
+      return;
+    }
+
+    user.password = newPassword; // pre-save hook hashes it
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1; // revoke old access tokens
+    user.refreshTokens = []; // drop all refresh sessions, then re-issue current
+    await user.save();
+
+    const accessToken = signAccessToken(user);
+    const refreshToken = await issueRefreshToken(user);
+    res.json({ accessToken, refreshToken, user: publicUser(user) });
+  } catch (err) {
+    console.error("changePassword error:", (err as Error).message);
+    res.status(500).json({ error: "Не удалось изменить пароль" });
   }
 };
 
@@ -187,6 +264,7 @@ router.post("/register", loginLimiter, register);
 router.post("/login", loginLimiter, login);
 router.post("/refresh", refresh);
 router.post("/logout", auth, logout);
+router.post("/change-password", auth, changePassword);
 router.get("/me", auth, me);
 
 export default router;

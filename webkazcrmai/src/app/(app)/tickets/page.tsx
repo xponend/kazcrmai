@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth";
-import { statusLabel, priorityLabel, categoryLabel } from "../../../lib/i18n";
+import { statusLabel, priorityLabel, categoryLabel, roleLabel } from "../../../lib/i18n";
 
 const STATUS_FILTERS = [
   { key: "", label: "Все" },
@@ -47,14 +47,23 @@ export default function TicketsPage() {
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
   const [assignee, setAssignee] = useState("");
-  const [operators, setOperators] = useState<Array<{ _id: string; name: string }>>([]);
+  const [operators, setOperators] = useState<Array<{ _id: string; name: string; role?: string }>>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Honor a ?status= deep-link (e.g. dashboard "Решено" tile → /tickets?status=resolved).
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const s = sp.get("status");
+    if (s && STATUS_FILTERS.some((f) => f.key === s)) setStatus(s);
+    const q = sp.get("q");
+    if (q) setSearch(q);
+  }, []);
+
   useEffect(() => {
     if (!isManagerOrAdmin) return;
-    api.listOperators().then((d) => setOperators(d.operators)).catch(() => {});
+    api.listAssignable().then((d) => setOperators(d.assignable)).catch(() => {});
   }, [isManagerOrAdmin]);
 
   // Reset page when filters change
@@ -144,7 +153,9 @@ export default function TicketsPage() {
             >
               <option value="">Все исполнители</option>
               {operators.map((o) => (
-                <option key={o._id} value={o._id}>{o.name}</option>
+                <option key={o._id} value={o._id}>
+                  {o.name}{o.role && o.role !== "operator" ? ` (${roleLabel(o.role)})` : ""}
+                </option>
               ))}
             </select>
           )}

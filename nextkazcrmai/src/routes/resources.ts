@@ -124,11 +124,22 @@ clientRouter.get("/:id", auth, getClient);
 clientRouter.post("/", auth, requireRole("admin", "manager"), createClient);
 clientRouter.post("/:id/ai/profile", auth, requireRole("admin", "manager"), aiProfile);
 
-const listUsers: RequestHandler = async (_req, res) => {
+// Roles that can be assigned a ticket as executor. Clients never appear here.
+const STAFF_ROLES = ["operator", "manager", "admin"] as const;
+type StaffRole = (typeof STAFF_ROLES)[number];
+const isStaffRole = (r: unknown): r is StaffRole =>
+  typeof r === "string" && (STAFF_ROLES as readonly string[]).includes(r);
+const isValidEmail = (email: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+
+const listUsers: RequestHandler = async (req, res) => {
   try {
-    const users = await User.find({ isActive: true })
-      .select("name email role skills currentLoad isActive")
-      .sort({ name: 1 });
+    const { role } = req.query as { role?: string };
+    const filter: Record<string, unknown> = { role: { $ne: "client" } };
+    if (isStaffRole(role)) filter.role = role;
+    const users = await User.find(filter)
+      .select("name email role skills currentLoad isActive createdAt")
+      .sort({ role: 1, name: 1 });
     res.json({ users });
   } catch (err) {
     console.error("users.list error:", (err as Error).message);
@@ -148,5 +159,146 @@ const listOperators: RequestHandler = async (_req, res) => {
   }
 };
 
+// All staff who can be manually assigned a ticket (operators + managers + admins).
+const listAssignable: RequestHandler = async (_req, res) => {
+  try {
+    const assignable = await User.find({ role: { $in: STAFF_ROLES }, isActive: true })
+      .select("name role skills currentLoad")
+      .sort({ role: 1, currentLoad: 1 });
+    res.json({ assignable });
+  } catch (err) {
+    console.error("users.assignable error:", (err as Error).message);
+    res.status(500).json({ error: "Не удалось получить исполнителей" });
+  }
+};
+
+const createUser: RequestHandler = async (req, res) => {
+  try {
+    const { name, email, password, role, skills } = req.body as {
+      name?: string;
+      email?: string;
+      password?: string;
+      role?: string;
+      skills?: unknown;
+    };
+    if (!isNonEmptyString(name, 200) || !email || !password) {
+      res.status(400).json({ error: "Имя, email и пароль обязательны" });
+      return;
+    }
+    if (!isValidEmail(email)) {
+      res.status(400).json({ error: "Некорректный email" });
+      return;
+    }
+    if (password.length < 8) {
+      res.status(400).json({ error: "Пароль должен быть не менее 8 символов" });
+      return;
+    }
+    if (!isStaffRole(role)) {
+      res.status(400).json({ error: "Роль должна быть operator, manager или admin" });
+      return;
+    }
+    const exists = await User.findOne({ email: email.toLowerCase() });
+    if (exists) {
+      res.status(409).json({ error: "Пользователь с таким email уже существует" });
+      return;
+    }
+    const user = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password,
+      role,
+      skills: Array.isArray(skills) ? skills.filter((s) => typeof s === "string").slice(0, 20) : [],
+    });
+    res.status(201).json({
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, skills: user.skills, currentLoad: 0, isActive: true },
+    });
+  } catch (err) {
+    console.error("users.create error:", (err as Error).message);
+    res.status(500).json({ error: "Не удалось создать пользователя" });
+  }
+};
+
+const updateUser: RequestHandler = async (req, res) => {
+  try {
+    if (!isObjectId(req.params.id)) {
+      res.status(400).json({ error: "Некорректный id пользователя" });
+      return;
+    }
+    const user = await User.findById(req.params.id);
+    if (!user || user.role === "client") {
+      res.status(404).json({ error: "Сотрудник не найден" });
+      return;
+    }
+    const { name, role, skills, isActive } = req.body as {
+      name?: string;
+      role?: string;
+      skills?: unknown;
+      isActive?: boolean;
+    };
+    // Guard: an admin must not lock themselves out (demote/deactivate self).
+    const isSelf = String(user._id) === String(req.user!._id);
+    if (isSelf && ((role !== undefined && role !== "admin") || isActive === false)) {
+      res.status(400).json({ error: "Нельзя понизить или отключить собственный аккаунт" });
+      return;
+    }
+    let revoke = false;
+    if (isNonEmptyString(name, 200)) user.name = name.trim();
+    if (role !== undefined) {
+      if (!isStaffRole(role)) {
+        res.status(400).json({ error: "Роль должна быть operator, manager или admin" });
+        return;
+      }
+      if (role !== user.role) revoke = true;
+      user.role = role;
+    }
+    if (Array.isArray(skills)) {
+      user.skills = skills.filter((s) => typeof s === "string").slice(0, 20);
+    }
+    if (typeof isActive === "boolean") {
+      if (isActive === false && user.isActive) revoke = true;
+      user.isActive = isActive;
+    }
+    if (revoke) user.tokenVersion = (user.tokenVersion ?? 0) + 1;
+    await user.save();
+    res.json({
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, skills: user.skills, currentLoad: user.currentLoad, isActive: user.isActive },
+    });
+  } catch (err) {
+    console.error("users.update error:", (err as Error).message);
+    res.status(500).json({ error: "Не удалось обновить пользователя" });
+  }
+};
+
+const resetUserPassword: RequestHandler = async (req, res) => {
+  try {
+    if (!isObjectId(req.params.id)) {
+      res.status(400).json({ error: "Некорректный id пользователя" });
+      return;
+    }
+    const { newPassword } = req.body as { newPassword?: string };
+    if (!newPassword || newPassword.length < 8) {
+      res.status(400).json({ error: "Пароль должен быть не менее 8 символов" });
+      return;
+    }
+    const user = await User.findById(req.params.id).select("+refreshTokens");
+    if (!user || user.role === "client") {
+      res.status(404).json({ error: "Сотрудник не найден" });
+      return;
+    }
+    user.password = newPassword; // hashed by pre-save hook
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1; // revoke their sessions
+    user.refreshTokens = [];
+    await user.save();
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("users.resetPassword error:", (err as Error).message);
+    res.status(500).json({ error: "Не удалось сбросить пароль" });
+  }
+};
+
 userRouter.get("/", auth, requireRole("admin", "manager"), listUsers);
 userRouter.get("/operators", auth, requireRole("admin", "manager"), listOperators);
+userRouter.get("/assignable", auth, requireRole("admin", "manager"), listAssignable);
+userRouter.post("/", auth, requireRole("admin"), createUser);
+userRouter.patch("/:id", auth, requireRole("admin"), updateUser);
+userRouter.post("/:id/password", auth, requireRole("admin"), resetUserPassword);

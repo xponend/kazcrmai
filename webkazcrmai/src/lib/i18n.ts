@@ -27,6 +27,7 @@ export const ROLE_LABELS: Record<string, string> = {
   admin: "Администратор",
   manager: "Менеджер",
   operator: "Оператор",
+  client: "Клиент",
 };
 
 export const statusLabel = (s?: string | null) =>

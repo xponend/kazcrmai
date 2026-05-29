@@ -150,6 +150,19 @@ export const logoutApi = async (refreshToken: string | null): Promise<void> => {
 
 export const getMe = () => api.get<{ user: AuthUser }>("/auth/me");
 
+/**
+ * Changes the current user's password. The backend rotates tokens: the current
+ * session stays valid while other devices are revoked. Returns fresh tokens.
+ * Wrong current password → 400 with { error, code: "BAD_PASSWORD" }.
+ */
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string
+): Promise<AuthPayload> => {
+  const { data } = await api.post("/auth/change-password", { currentPassword, newPassword });
+  return normalizeAuthResponse(data);
+};
+
 export const getTickets = (params?: Record<string, string>) =>
   api.get("/tickets", { params });
 

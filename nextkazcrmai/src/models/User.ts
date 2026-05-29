@@ -1,8 +1,8 @@
-import mongoose, { Schema, type HydratedDocument, type Model } from "mongoose";
+import mongoose, { Schema, type HydratedDocument, type Model, type Types } from "mongoose";
 import bcrypt from "bcryptjs";
 import { env } from "../config/env";
 
-export type Role = "admin" | "manager" | "operator";
+export type Role = "admin" | "manager" | "operator" | "client";
 
 export interface RefreshTokenEntry {
   tokenHash: string;
@@ -15,6 +15,8 @@ export interface UserAttrs {
   email: string;
   password: string;
   role: Role;
+  /** For role "client" — the company (Client doc) this portal user belongs to. */
+  clientId?: Types.ObjectId;
   skills: string[];
   currentLoad: number;
   isActive: boolean;
@@ -43,7 +45,8 @@ const userSchema = new Schema<UserAttrs, UserModel, UserMethods>(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, select: false },
-    role: { type: String, enum: ["admin", "manager", "operator"], default: "operator" },
+    role: { type: String, enum: ["admin", "manager", "operator", "client"], default: "operator" },
+    clientId: { type: Schema.Types.ObjectId, ref: "Client" },
     skills: { type: [String], default: [] },
     currentLoad: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },

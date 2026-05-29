@@ -55,6 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Route guard: redirect on auth state changes once we've finished loading.
   useEffect(() => {
     if (loading) return;
+    // The /landing/* client portal is public and manages its own auth/redirects.
+    if (pathname?.startsWith("/landing")) return;
+    // Client-role users belong to the portal, not the staff admin app.
+    if (user?.role === "client") {
+      router.replace("/landing/portal");
+      return;
+    }
     if (!user && pathname !== "/login") router.replace("/login");
     if (user && pathname === "/login") router.replace("/");
   }, [user, loading, pathname, router]);

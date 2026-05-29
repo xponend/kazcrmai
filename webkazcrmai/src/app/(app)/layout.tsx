@@ -250,6 +250,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {SECTIONS.map((s) => (
             <SidebarSection key={s.label} section={s} pathname={pathname} collapsed={collapsed} />
           ))}
+
+          {user.role === "admin" && (
+            <Link
+              href="/team"
+              title="Команда"
+              className={`flex items-center ${collapsed ? "justify-center w-10 h-10" : "gap-2.5 px-3 py-2"} rounded-md text-sm transition-colors ${
+                pathname.startsWith("/team") ? "bg-violet-600/20 text-violet-300" : "text-neutral-300 hover:bg-neutral-800"
+              }`}
+            >
+              <Users size={18} strokeWidth={1.75} />
+              {!collapsed && <span className="font-medium">Команда</span>}
+            </Link>
+          )}
         </nav>
 
         <div className="border-t border-neutral-800 p-3">

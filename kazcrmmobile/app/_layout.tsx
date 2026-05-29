@@ -40,6 +40,14 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
+            name="change-password"
+            options={{
+              headerShown: true,
+              title: "Смена пароля",
+              headerTintColor: "#1e40af",
+            }}
+          />
+          <Stack.Screen
             name="ai-chat"
             options={{
               headerShown: true,

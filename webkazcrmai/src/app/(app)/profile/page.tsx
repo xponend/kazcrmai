@@ -1,10 +1,105 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mail, Shield, User as UserIcon, LogOut } from "lucide-react";
-import { api } from "../../../lib/api";
+import { Mail, Shield, User as UserIcon, LogOut, KeyRound, Check } from "lucide-react";
+import { api, ApiError } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth";
 import { ROLE_LABELS } from "../../../lib/i18n";
+
+function ChangePasswordCard() {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setDone(false);
+    if (next.length < 8) {
+      setError("Новый пароль должен быть не менее 8 символов");
+      return;
+    }
+    if (next !== confirm) {
+      setError("Пароли не совпадают");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.changePassword(current, next);
+      setDone(true);
+      setCurrent("");
+      setNext("");
+      setConfirm("");
+    } catch (err) {
+      const msg =
+        err instanceof ApiError && (err as ApiError).code === "BAD_PASSWORD"
+          ? "Текущий пароль неверен"
+          : err instanceof Error
+            ? err.message
+            : "Не удалось изменить пароль";
+      setError(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const inputCls =
+    "w-full px-3 py-2 rounded-md border border-neutral-800 bg-neutral-900/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40";
+
+  return (
+    <div className="bg-[#161616] border border-neutral-800 rounded-xl p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <KeyRound size={16} strokeWidth={1.75} className="text-neutral-400" />
+        <span className="text-sm font-semibold text-neutral-100">Смена пароля</span>
+      </div>
+      <form onSubmit={submit} className="space-y-3 max-w-sm">
+        <input
+          type="password"
+          autoComplete="current-password"
+          placeholder="Текущий пароль"
+          value={current}
+          onChange={(e) => setCurrent(e.target.value)}
+          className={inputCls}
+          required
+        />
+        <input
+          type="password"
+          autoComplete="new-password"
+          placeholder="Новый пароль (мин. 8 символов)"
+          value={next}
+          onChange={(e) => setNext(e.target.value)}
+          className={inputCls}
+          required
+        />
+        <input
+          type="password"
+          autoComplete="new-password"
+          placeholder="Повторите новый пароль"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          className={inputCls}
+          required
+        />
+        {error && <div className="text-xs text-red-400">{error}</div>}
+        {done && (
+          <div className="text-xs text-emerald-400 inline-flex items-center gap-1">
+            <Check size={13} strokeWidth={2} /> Пароль изменён
+          </div>
+        )}
+        <button
+          type="submit"
+          disabled={busy}
+          className="px-4 py-2 rounded-md bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium"
+        >
+          {busy ? "Сохранение…" : "Изменить пароль"}
+        </button>
+      </form>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const { user, logout, aiAvailable } = useAuth();
@@ -86,6 +181,8 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <ChangePasswordCard />
 
       <button
         onClick={logout}

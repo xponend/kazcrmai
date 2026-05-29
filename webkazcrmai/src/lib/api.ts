@@ -6,7 +6,7 @@ const ACCESS_KEY = "kc_access";
 const REFRESH_KEY = "kc_refresh";
 const USER_KEY = "kc_user";
 
-export type AuthUser = { id: string; name: string; email: string; role: string };
+export type AuthUser = { id: string; name: string; email: string; role: string; clientId?: string };
 
 export const tokenStore = {
   getAccess: () => (typeof window === "undefined" ? null : localStorage.getItem(ACCESS_KEY)),
@@ -152,6 +152,16 @@ export const api = {
     tokenStore.set(norm.accessToken, norm.refreshToken, norm.user);
     return norm;
   },
+  // Client (landing portal) self-registration. Creates a `client` role tied to a company.
+  async register(data: { name: string; email: string; password: string; company: string; phone?: string }) {
+    const raw = await request<unknown>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    const norm = normalizeAuth(raw);
+    tokenStore.set(norm.accessToken, norm.refreshToken, norm.user);
+    return norm;
+  },
   async logout() {
     const refreshToken = tokenStore.getRefresh();
     try {
@@ -163,6 +173,16 @@ export const api = {
     tokenStore.clear();
   },
   me: () => request<{ user: AuthUser }>("/auth/me"),
+  // Self-service password change. Returns rotated tokens (current session stays valid).
+  async changePassword(currentPassword: string, newPassword: string) {
+    const raw = await request<unknown>("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const norm = normalizeAuth(raw);
+    tokenStore.set(norm.accessToken, norm.refreshToken, norm.user);
+    return norm;
+  },
 
   // ─────────── tickets ───────────
   listTickets: (params: Record<string, string> = {}) => {
@@ -219,6 +239,17 @@ export const api = {
   aiClientProfile: (id: string) =>
     request<{ profile: any; sampleSize: number }>(`/clients/${id}/ai/profile`, { method: "POST" }),
   listOperators: () => request<{ operators: any[] }>("/users/operators"),
+
+  // ─────────── staff / team management (admin) ───────────
+  listUsers: (role?: string) =>
+    request<{ users: any[] }>(`/users${role ? `?role=${encodeURIComponent(role)}` : ""}`),
+  listAssignable: () => request<{ assignable: any[] }>("/users/assignable"),
+  createUser: (data: { name: string; email: string; password: string; role: string; skills?: string[] }) =>
+    request<{ user: any }>("/users", { method: "POST", body: JSON.stringify(data) }),
+  updateUser: (id: string, data: { name?: string; role?: string; skills?: string[]; isActive?: boolean }) =>
+    request<{ user: any }>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  resetUserPassword: (id: string, newPassword: string) =>
+    request<{ ok: boolean }>(`/users/${id}/password`, { method: "POST", body: JSON.stringify({ newPassword }) }),
 
   // ─────────── analytics + insights ───────────
   analytics: () => request<any>("/analytics"),

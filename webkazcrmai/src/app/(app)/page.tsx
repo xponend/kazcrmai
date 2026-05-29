@@ -126,9 +126,9 @@ export default function DashboardPage() {
     { label: "Ср. обработка", value: analytics?.avgProcessingMins != null ? `${Math.round(analytics.avgProcessingMins)} мин` : "—", icon: Clock, hint: analytics?.avgFirstResponseMins != null ? `Ответ за ${Math.round(analytics.avgFirstResponseMins)} мин` : undefined },
     { label: "Обработано ИИ", value: aiProcessedPct ? `${aiProcessedPct}%` : "—", icon: Sparkles, hint: analytics?.aiProcessed ? `${analytics.aiProcessed} из ${analytics.totalTickets}` : undefined },
     { label: "Клиенты", value: clientsCount ?? "—", icon: Building2, href: "/clients" },
-    { label: "Операторы", value: operatorsCount ?? "—", icon: Users },
-    { label: "Решено", value: analytics?.resolvedTickets ?? "—", icon: CheckCircle2 },
-    { label: "Категории", value: analytics?.byCategory?.length ?? "—", icon: Tag },
+    { label: "Операторы", value: operatorsCount ?? "—", icon: Users, href: isPrivileged ? "/team" : undefined },
+    { label: "Решено", value: analytics?.resolvedTickets ?? "—", icon: CheckCircle2, href: "/tickets?status=resolved" },
+    { label: "Категории", value: analytics?.byCategory?.length ?? "—", icon: Tag, href: "/analytics" },
   ];
 
   const greeting = (() => {

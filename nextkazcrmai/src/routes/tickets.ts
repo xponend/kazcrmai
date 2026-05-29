@@ -2,7 +2,7 @@ import { Router, type RequestHandler } from "express";
 import { Ticket, type TicketPriority, type TicketStatus } from "../models/Ticket";
 import { TicketHistory } from "../models/TicketHistory";
 import { User } from "../models/User";
-import { auth } from "../middleware/auth";
+import { auth, requireRole } from "../middleware/auth";
 import { processNewTicket } from "../lib/ai/orchestrator";
 import { suggestReplies, summarizeTicket, generatePlaybook, translateTicket, type TargetLang } from "../lib/ai/assist";
 import { classifyTicket } from "../lib/ai/classify";
@@ -31,8 +31,17 @@ const list: RequestHandler = async (req, res) => {
     if (priority && PRIORITIES.has(priority as TicketPriority)) filter.priority = priority;
     if (assignee && isObjectId(assignee)) filter.assigneeId = assignee;
 
-    // Operators only see their own tickets; managers/admins see all.
+    // Operators only see their own tickets; clients only see their company's;
+    // managers/admins see all.
     if (user.role === "operator") filter.assigneeId = user._id;
+    if (user.role === "client") {
+      if (!user.clientId) {
+        res.json({ tickets: [], total: 0, page: 1, pages: 0 });
+        return;
+      }
+      filter.clientId = user.clientId;
+      delete filter.assigneeId; // clients can't filter by staff assignee
+    }
 
     const [tickets, total] = await Promise.all([
       Ticket.find(filter)
@@ -76,6 +85,13 @@ const get: RequestHandler = async (req, res) => {
         return;
       }
     }
+    // Clients may only read tickets belonging to their own company.
+    if (user.role === "client") {
+      if (!user.clientId || String(ticket.clientId?._id ?? ticket.clientId) !== String(user.clientId)) {
+        fail(res, 403, "Недостаточно прав", "FORBIDDEN");
+        return;
+      }
+    }
 
     const history = await TicketHistory.find({ ticketId: ticket._id })
       .populate("performedBy", "name")
@@ -90,11 +106,18 @@ const get: RequestHandler = async (req, res) => {
 const create: RequestHandler = async (req, res) => {
   try {
     const user = req.user!;
-    const { title, description, clientId } = req.body as {
+    const { title, description, clientId: bodyClientId } = req.body as {
       title?: string;
       description?: string;
       clientId?: string;
     };
+    // Clients submit for their OWN company (clientId is taken from their account,
+    // never trusted from the body). Staff must name the client explicitly.
+    const clientId = user.role === "client" ? (user.clientId ? String(user.clientId) : undefined) : bodyClientId;
+    if (user.role === "client" && !clientId) {
+      fail(res, 400, "Ваш аккаунт не привязан к компании");
+      return;
+    }
     if (!isNonEmptyString(title, 200) || !isNonEmptyString(description, 10_000) || !isObjectId(clientId)) {
       fail(res, 400, "Заполните все обязательные поля корректно");
       return;
@@ -147,6 +170,12 @@ const update: RequestHandler = async (req, res) => {
       return;
     }
 
+    // Clients may never mutate tickets (status/assignee/priority) — read + comment only.
+    if (user.role === "client") {
+      fail(res, 403, "Недостаточно прав", "FORBIDDEN");
+      return;
+    }
+
     const { status, assigneeId, priority } = req.body as {
       status?: TicketStatus;
       assigneeId?: string;
@@ -195,8 +224,8 @@ const update: RequestHandler = async (req, res) => {
         return;
       }
       const newAssignee = await User.findById(assigneeId);
-      if (!newAssignee || !newAssignee.isActive || newAssignee.role !== "operator") {
-        fail(res, 400, "Получатель должен быть активным оператором");
+      if (!newAssignee || !newAssignee.isActive || newAssignee.role === "client") {
+        fail(res, 400, "Исполнитель должен быть активным сотрудником");
         return;
       }
       const previousAssigneeId = ticket.assigneeId ?? null;
@@ -275,8 +304,17 @@ async function loadTicketWithAuth(req: Parameters<RequestHandler>[0], res: Param
       return null;
     }
   }
+  if (user.role === "client") {
+    if (!user.clientId || String(ticket.clientId) !== String(user.clientId)) {
+      fail(res, 403, "Недостаточно прав", "FORBIDDEN");
+      return null;
+    }
+  }
   return ticket;
 }
+
+// Staff-only guard for AI tooling that clients must never reach.
+const staffOnly = requireRole("operator", "manager", "admin");
 
 const aiSuggestReply: RequestHandler = async (req, res) => {
   try {
@@ -485,11 +523,11 @@ const addComment: RequestHandler = async (req, res) => {
   }
 };
 
-router.post("/:id/ai/suggest-reply", auth, aiSuggestReply);
-router.post("/:id/ai/summarize", auth, aiSummarize);
-router.get("/:id/ai/similar", auth, aiSimilar);
-router.post("/:id/ai/playbook", auth, aiPlaybook);
-router.post("/:id/ai/translate", auth, aiTranslate);
+router.post("/:id/ai/suggest-reply", auth, staffOnly, aiSuggestReply);
+router.post("/:id/ai/summarize", auth, staffOnly, aiSummarize);
+router.get("/:id/ai/similar", auth, staffOnly, aiSimilar);
+router.post("/:id/ai/playbook", auth, staffOnly, aiPlaybook);
+router.post("/:id/ai/translate", auth, staffOnly, aiTranslate);
 router.post("/:id/comments", auth, addComment);
 router.post("/preview", auth, aiPreview);
 

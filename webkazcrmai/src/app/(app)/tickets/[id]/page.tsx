@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../../lib/api";
 import { useAuth } from "../../../../lib/auth";
-import { statusLabel, priorityLabel, categoryLabel } from "../../../../lib/i18n";
+import { statusLabel, priorityLabel, categoryLabel, roleLabel } from "../../../../lib/i18n";
 
 const NEXT_STATUS: Record<string, string> = {
   new: "in_progress",
@@ -38,7 +38,7 @@ export default function TicketDetailPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [operators, setOperators] = useState<Array<{ _id: string; name: string }>>([]);
+  const [operators, setOperators] = useState<Array<{ _id: string; name: string; role?: string }>>([]);
   const [updating, setUpdating] = useState(false);
 
   // AI panels
@@ -80,7 +80,8 @@ export default function TicketDetailPage() {
 
   useEffect(() => {
     if (!isManagerOrAdmin) return;
-    api.listOperators().then((d) => setOperators(d.operators)).catch(() => {});
+    // Assignable = operators + managers + admins (manual assignment to anyone on staff).
+    api.listAssignable().then((d) => setOperators(d.assignable)).catch(() => {});
   }, [isManagerOrAdmin]);
 
   const reassign = async (assigneeId: string) => {
@@ -260,7 +261,9 @@ export default function TicketDetailPage() {
               >
                 <option value="">— не назначен —</option>
                 {operators.map((o) => (
-                  <option key={o._id} value={o._id}>{o.name}</option>
+                  <option key={o._id} value={o._id}>
+                    {o.name}{o.role && o.role !== "operator" ? ` (${roleLabel(o.role)})` : ""}
+                  </option>
                 ))}
               </select>
             </label>
